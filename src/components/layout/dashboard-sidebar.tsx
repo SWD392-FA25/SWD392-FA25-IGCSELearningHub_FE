@@ -38,7 +38,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
 
         <nav className="flex flex-col gap-2 p-4">
           <Link
-            href="/"
+            href="/pages/admin"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <School className="h-5 w-5" />
@@ -46,7 +46,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           </Link>
 
           <Link
-            href="/courses"
+            href="/pages/admin/courses"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <BookOpen className="h-5 w-5" />
@@ -72,13 +72,13 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
             {expandedItems.includes("user-management") && (
               <div className="ml-8 mt-1 flex flex-col gap-1">
                 <Link
-                  href="/users/students"
+                  href="/pages/admin/students"
                   className="rounded-lg px-3 py-2 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                 >
                   Student Role
                 </Link>
                 <Link
-                  href="/users/parents"
+                  href="/pages/admin/parents"
                   className="rounded-lg px-3 py-2 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                 >
                   Parent Role
@@ -88,7 +88,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           </div>
 
           <Link
-            href="/teachers"
+            href="/pages/admin/teachers"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <GraduationCap className="h-5 w-5" />
@@ -96,7 +96,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           </Link>
 
           <Link
-            href="/classes"
+            href="/pages/admin/classes"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <School className="h-5 w-5" />
