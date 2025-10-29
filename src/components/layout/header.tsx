@@ -48,6 +48,14 @@ export function Header() {
             >
               About
             </Link>
+            <Link
+              href="/teacher"
+              className={`text-sm font-medium transition-colors ${
+                isActive("/teacher") ? "text-primary" : "text-foreground hover:text-primary"
+              }`}
+            >
+              Teacher
+            </Link>
           </nav>
 
           {/* Desktop Login Button */}
@@ -99,6 +107,15 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 About
+              </Link>
+              <Link
+                href="/teacher"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/teacher") ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Teacher
               </Link>
               <Link
                 href="/login"
