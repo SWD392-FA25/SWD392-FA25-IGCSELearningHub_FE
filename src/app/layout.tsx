@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "IGCSE-Learning Hub",
   description: "Learn IGCSE courses with our comprehensive online platform",
-  generator: "v0.app",
+  generator: "Theme by IGCSE-Learning Hub",
 }
 
 export default function RootLayout({

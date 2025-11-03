@@ -1,72 +1,77 @@
 "use client"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-
-const COURSES = [
-  {
-    id: 1,
-    title: "Mathematics",
-    description: "Master core mathematical concepts and problem-solving techniques",
-    level: "IGCSE",
-    duration: "12 weeks",
-    students: 1250,
-    rating: 4.8,
-    image: "📐",
-  },
-  {
-    id: 2,
-    title: "English Language",
-    description: "Develop advanced reading, writing, and communication skills",
-    level: "IGCSE",
-    duration: "10 weeks",
-    students: 980,
-    rating: 4.9,
-    image: "📚",
-  },
-  {
-    id: 3,
-    title: "Physics",
-    description: "Explore fundamental physics principles and real-world applications",
-    level: "IGCSE",
-    duration: "14 weeks",
-    students: 750,
-    rating: 4.7,
-    image: "⚛️",
-  },
-  {
-    id: 4,
-    title: "Chemistry",
-    description: "Understand chemical reactions and molecular structures",
-    level: "IGCSE",
-    duration: "14 weeks",
-    students: 680,
-    rating: 4.8,
-    image: "🧪",
-  },
-  {
-    id: 5,
-    title: "Biology",
-    description: "Study living organisms and biological processes",
-    level: "IGCSE",
-    duration: "12 weeks",
-    students: 920,
-    rating: 4.9,
-    image: "🔬",
-  },
-  {
-    id: 6,
-    title: "History",
-    description: "Explore historical events and their global impact",
-    level: "IGCSE",
-    duration: "11 weeks",
-    students: 540,
-    rating: 4.6,
-    image: "📜",
-  },
-]
+import { courseService } from "@/services/course-service"
+import { CourseSummary } from "@/types/api-types"
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<CourseSummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    loadCourses()
+  }, [])
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true)
+      const response = await courseService.getAllCourses()
+      if (response.succeeded && response.data) {
+        setCourses(response.data)
+      } else {
+        setError(response.message || "Failed to load courses")
+      }
+    } catch (err) {
+      setError("Failed to load courses. Please try again later.")
+      console.error("Error loading courses:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatPrice = (price: number) => {
+    if (!price || price <= 0) return 'Free'
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading courses...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <button 
+              onClick={loadCourses}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90"
+            >
+              Try Again
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -85,39 +90,47 @@ export default function CoursesPage() {
         {/* Courses Grid */}
         <section className="w-full py-20 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {COURSES.map((course) => (
-                <Link
-                  key={course.id}
-                  href={`/courses/${course.id}`}
-                  className="group p-6 border border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer bg-card"
-                >
-                  <div className="text-5xl mb-4">{course.image}</div>
+            {courses.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg">No courses available at the moment.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {courses.map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/courses/${course.id}`}
+                    className="group p-6 border border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer bg-card"
+                  >
+                    <h3 className="text-xl font-semibold text-foreground mb-2">{course.title}</h3>
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{course.shortDescription}</p>
 
-                  <h3 className="text-xl font-semibold text-foreground mb-2">{course.title}</h3>
-                  <p className="text-muted-foreground text-sm mb-4">{course.description}</p>
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Level</span>
+                        <span className="font-medium text-foreground">{course.level}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Quizzes</span>
+                        <span className="font-medium text-foreground">{course.totalQuizzes}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Assignments</span>
+                        <span className="font-medium text-foreground">{course.totalAssignments}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Price</span>
+                        <span className="font-medium text-primary">{formatPrice(course.price)}</span>
+                      </div>
+                    </div>
 
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Duration</span>
-                      <span className="font-medium text-foreground">{course.duration}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Students</span>
-                      <span className="font-medium text-foreground">{course.students.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Rating</span>
-                      <span className="font-medium text-foreground">⭐ {course.rating}</span>
-                    </div>
-                  </div>
-
-                  <button className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity">
-                    View Details
-                  </button>
-                </Link>
-              ))}
-            </div>
+                    <button className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity">
+                      View Details
+                    </button>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>

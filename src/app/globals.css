@@ -124,3 +124,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for form validation */
+.border-destructive {
+  border-color: hsl(var(--destructive)) !important;
+}
