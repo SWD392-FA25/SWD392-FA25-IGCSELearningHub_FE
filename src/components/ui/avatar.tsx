@@ -9,7 +9,8 @@ export function Avatar({ children, className, ...props }: React.HTMLAttributes<H
 }
 
 export function AvatarImage(props: React.ImgHTMLAttributes<HTMLImageElement>) {
-  return <img {...props} className={"h-full w-full rounded-full object-cover " + (props.className ?? "")} />
+  const { alt = "", className, ...rest } = props
+  return <img alt={alt} {...rest} className={"h-full w-full rounded-full object-cover " + (className ?? "")} />
 }
 
 export function AvatarFallback({ children, className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {

@@ -21,7 +21,9 @@ export default function LoginPage() {
 
       // Redirect to dashboard or home after successful login
       window.location.href = "/dashboard"
-    } catch (err) {
+    } catch (error) {
+  // Log the error for debugging and show a friendly message
+  console.error(error)
       setError("Failed to login with Google. Please try again.")
       setIsLoading(false)
     }

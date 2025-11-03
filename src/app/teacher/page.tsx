@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { useState } from "react"
 
 interface Course {
   id: string
@@ -73,7 +72,6 @@ const TEACHER_COURSES: Course[] = [
 ]
 
 export default function TeacherDashboard() {
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
