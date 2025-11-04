@@ -1,27 +1,19 @@
-'use client'
+"use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/input'
-import { useSearch } from '@/context/SearchContext'
-import { Bell, Menu, Search } from 'lucide-react'
+import { Bell, Menu, Search } from "lucide-react"
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface DashboardHeaderProps {
   onMenuClick: () => void
 }
 
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
-  const { searchQuery, setSearchQuery } = useSearch()
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card">
       <div className="flex h-16 items-center gap-4 px-4 md:px-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={onMenuClick}
-        >
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle menu</span>
         </Button>
@@ -36,13 +28,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         <div className="flex-1 max-w-md">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search in current page..."
-              className="w-full pl-10 bg-background"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <Input type="search" placeholder="Search..." className="w-full pl-10 bg-background" />
           </div>
         </div>
 
@@ -54,10 +40,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           </Button>
 
           <Avatar className="h-9 w-9">
-            <AvatarImage
-              src="/56d65f27ec9f2c3fa6dc13e1d59f9a26.jpg"
-              alt="User"
-            />
+            <AvatarImage src="/56d65f27ec9f2c3fa6dc13e1d59f9a26.jpg" alt="User" />
             <AvatarFallback>AD</AvatarFallback>
           </Avatar>
         </div>

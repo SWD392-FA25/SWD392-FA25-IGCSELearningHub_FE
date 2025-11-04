@@ -1,100 +1,73 @@
-'use client'
+"use client"
 
-import { StudentDetailDialog } from '@/components/admin/students/student-detail-dialog'
-import { UserEditDialog } from '@/components/admin/users/user-edit-dialog'
-import { DashboardHeader } from '@/components/layout/dashboard-header'
-import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
-import { Button } from '@/components/ui/Button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { SearchProvider, useSearch } from '@/context/SearchContext'
-import { deleteAccount } from '@/services/userService'
-import { User } from '@/types/api'
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from "react"
+import { DashboardHeader } from "@/components/layout/dashboard-header"
+import { DashboardSidebar } from "@/components/layout/dashboard-sidebar"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/Button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Eye, Pencil, Trash2, Plus } from "lucide-react"
+import { StudentDetailDialog } from "@/components/admin/students/student-detail-dialog"
 
-function StudentsPageContent() {
+interface Student {
+  id: string
+  name: string
+  email: string
+  status: "Online" | "Offline"
+  courses: string[]
+}
+
+export default function StudentsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState<User | null>(null)
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-  const [students, setStudents] = useState<User[]>([])
-  const [filteredStudents, setFilteredStudents] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // Use search from header context
-  const { searchQuery } = useSearch()
+  const [students, setStudents] = useState<Student[]>([
+    {
+      id: "S001",
+      name: "John Doe",
+      email: "john.doe@example.com",
+      status: "Online",
+      courses: ["Mathematics IGCSE", "Physics Advanced"],
+    },
+    {
+      id: "S002",
+      name: "Jane Smith",
+      email: "jane.smith@example.com",
+      status: "Offline",
+      courses: ["English Literature", "Chemistry Core"],
+    },
+    {
+      id: "S003",
+      name: "Mike Johnson",
+      email: "mike.j@example.com",
+      status: "Online",
+      courses: ["Mathematics IGCSE"],
+    },
+    {
+      id: "S004",
+      name: "Sarah Williams",
+      email: "sarah.w@example.com",
+      status: "Offline",
+      courses: ["Physics Advanced", "Chemistry Core"],
+    },
+  ])
 
-  // Fetch students from API
-  useEffect(() => {
-    fetchStudents()
-  }, [])
-
-  // Filter students based on search query
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredStudents(students)
-    } else {
-      const query = searchQuery.toLowerCase()
-      const filtered = students.filter(
-        (student) =>
-          student.userName.toLowerCase().includes(query) ||
-          student.email.toLowerCase().includes(query) ||
-          student.fullName?.toLowerCase().includes(query) ||
-          student.id.toString().includes(query)
-      )
-      setFilteredStudents(filtered)
-    }
-  }, [searchQuery, students])
-
-  const fetchStudents = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      // Dynamic import to ensure client-side
-      const { getAccountsByRole } = await import('@/services/userService')
-      const data = await getAccountsByRole('Student')
-      setStudents(data)
-      setFilteredStudents(data)
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch students')
-      console.error('Error fetching students:', err)
-    } finally {
-      setIsLoading(false)
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this student?")) {
+      setStudents(students.filter((s) => s.id !== id))
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this student?')) {
-      try {
-        await deleteAccount(id)
-        // Refresh the list after deletion
-        fetchStudents()
-      } catch (err: any) {
-        alert(err.message || 'Failed to delete student')
-      }
-    }
-  }
-
-  const handleViewDetail = (student: User) => {
+  const handleViewDetail = (student: Student) => {
     setSelectedStudent(student)
     setDetailOpen(true)
   }
 
-  const handleEdit = (student: User) => {
-    setSelectedStudent(student)
-    setEditOpen(true)
-  }
-
   return (
     <div className="flex h-screen overflow-hidden">
-      <DashboardSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
@@ -104,9 +77,7 @@ function StudentsPageContent() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold">Student Management</h1>
-                <p className="mt-1 text-muted-foreground">
-                  Manage student accounts and enrollments
-                </p>
+                <p className="mt-1 text-muted-foreground">Manage student accounts and enrollments</p>
               </div>
               <Button className="bg-primary">
                 <Plus className="mr-2 h-4 w-4" />
@@ -114,135 +85,81 @@ function StudentsPageContent() {
               </Button>
             </div>
 
-            {error && (
-              <div className="mb-6 rounded-lg bg-destructive/10 p-4 text-destructive">
-                {error}
-              </div>
-            )}
-
             <Card>
               <CardHeader>
-                <CardTitle>All Students ({filteredStudents.length})</CardTitle>
+                <CardTitle>All Students</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    Loading students...
-                  </div>
-                ) : filteredStudents.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    {searchQuery
-                      ? 'No students found matching your search.'
-                      : 'No students found.'}
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border text-left">
-                          <th className="pb-3 font-medium text-muted-foreground">
-                            User ID
-                          </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
-                            User Name
-                          </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
-                            Full Name
-                          </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
-                            Email
-                          </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
-                            Status
-                          </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredStudents.map((student) => (
-                          <tr
-                            key={student.id}
-                            className="border-b border-border last:border-0"
-                          >
-                            <td className="py-4 text-sm font-medium">
-                              {student.id}
-                            </td>
-                            <td className="py-4">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage
-                                    src={`/.jpg?height=40&width=40&query=${student.userName}`}
-                                  />
-                                  <AvatarFallback>
-                                    {student.userName.charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium">
-                                  {student.userName}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="py-4 text-sm">
-                              {student.fullName || 'N/A'}
-                            </td>
-                            <td className="py-4 text-sm text-muted-foreground">
-                              {student.email}
-                            </td>
-                            <td className="py-4">
-                              <Badge
-                                variant="secondary"
-                                className={
-                                  student.status === 'Active'
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
-                                }
-                              >
-                                <span
-                                  className={`mr-1.5 inline-block h-2 w-2 rounded-full ${
-                                    student.status === 'Active'
-                                      ? 'bg-green-600'
-                                      : 'bg-gray-600'
-                                  }`}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border text-left">
+                        <th className="pb-3 font-medium text-muted-foreground">User ID</th>
+                        <th className="pb-3 font-medium text-muted-foreground">User Name</th>
+                        <th className="pb-3 font-medium text-muted-foreground">Email</th>
+                        <th className="pb-3 font-medium text-muted-foreground">Status</th>
+                        <th className="pb-3 font-medium text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {students.map((student) => (
+                        <tr key={student.id} className="border-b border-border last:border-0">
+                          <td className="py-4 text-sm font-medium">{student.id}</td>
+                          <td className="py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage
+                                  src={`/.jpg?height=40&width=40&query=${student.name}`}
                                 />
-                                {student.status}
-                              </Badge>
-                            </td>
-                            <td className="py-4">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => handleViewDetail(student)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => handleEdit(student)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive"
-                                  onClick={() => handleDelete(student.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                                <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{student.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 text-sm text-muted-foreground">{student.email}</td>
+                          <td className="py-4">
+                            <Badge
+                              variant="secondary"
+                              className={
+                                student.status === "Online"
+                                  ? "bg-green-100 text-green-700 hover:bg-green-100"
+                                  : "bg-gray-100 text-gray-700 hover:bg-gray-100"
+                              }
+                            >
+                              <span
+                                className={`mr-1.5 inline-block h-2 w-2 rounded-full ${student.status === "Online" ? "bg-green-600" : "bg-gray-600"}`}
+                              />
+                              {student.status}
+                            </Badge>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleViewDetail(student)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => handleDelete(student.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -250,36 +167,8 @@ function StudentsPageContent() {
       </div>
 
       {selectedStudent && (
-        <>
-          <StudentDetailDialog
-            student={{
-              id: selectedStudent.id.toString(),
-              name: selectedStudent.fullName || selectedStudent.userName,
-              email: selectedStudent.email,
-              status:
-                selectedStudent.status === 'Active' ? 'Online' : 'Offline',
-              courses: [],
-            }}
-            open={detailOpen}
-            onOpenChange={setDetailOpen}
-          />
-          <UserEditDialog
-            user={selectedStudent}
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            onUpdate={fetchStudents}
-          />
-        </>
+        <StudentDetailDialog student={selectedStudent} open={detailOpen} onOpenChange={setDetailOpen} />
       )}
     </div>
-  )
-}
-
-// Wrap with SearchProvider
-export default function StudentsPage() {
-  return (
-    <SearchProvider>
-      <StudentsPageContent />
-    </SearchProvider>
   )
 }
