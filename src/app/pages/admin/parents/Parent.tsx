@@ -1,66 +1,99 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { DashboardHeader } from "@/components/layout/dashboard-header"
-import { DashboardSidebar } from "@/components/layout/dashboard-sidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/Button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Eye, Pencil, Trash2, Plus } from "lucide-react"
-import { ParentDetailDialog } from "@/components/admin/parents/parent-detail-dialog"
+import { ParentDetailDialog } from '@/components/admin/parents/parent-detail-dialog'
+import { UserEditDialog } from '@/components/admin/users/user-edit-dialog'
+import { DashboardHeader } from '@/components/layout/dashboard-header'
+import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
+import { Button } from '@/components/ui/Button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SearchProvider, useSearch } from '@/context/SearchContext'
+import { deleteAccount } from '@/services/userService'
+import { User } from '@/types/api'
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-interface Parent {
-  id: string
-  name: string
-  email: string
-  status: "Online" | "Offline"
-  children: string[]
-}
-
-export default function ParentsPage() {
+function ParentsPageContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [selectedParent, setSelectedParent] = useState<Parent | null>(null)
+  const [selectedParent, setSelectedParent] = useState<User | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [parents, setParents] = useState<User[]>([])
+  const [filteredParents, setFilteredParents] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const [parents, setParents] = useState<Parent[]>([
-    {
-      id: "P001",
-      name: "Robert Doe",
-      email: "robert.doe@example.com",
-      status: "Online",
-      children: ["John Doe"],
-    },
-    {
-      id: "P002",
-      name: "Mary Smith",
-      email: "mary.smith@example.com",
-      status: "Offline",
-      children: ["Jane Smith"],
-    },
-    {
-      id: "P003",
-      name: "David Johnson",
-      email: "david.j@example.com",
-      status: "Online",
-      children: ["Mike Johnson"],
-    },
-  ])
+  // Use search from header context
+  const { searchQuery } = useSearch()
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this parent account?")) {
-      setParents(parents.filter((p) => p.id !== id))
+  // Fetch parents from API
+  useEffect(() => {
+    fetchParents()
+  }, [])
+
+  // Filter parents based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredParents(parents)
+    } else {
+      const query = searchQuery.toLowerCase()
+      const filtered = parents.filter(
+        (parent) =>
+          parent.userName.toLowerCase().includes(query) ||
+          parent.email.toLowerCase().includes(query) ||
+          parent.fullName?.toLowerCase().includes(query) ||
+          parent.id.toString().includes(query)
+      )
+      setFilteredParents(filtered)
+    }
+  }, [searchQuery, parents])
+
+  const fetchParents = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // Dynamic import
+      const { getAccountsByRole } = await import('@/services/userService')
+      const data = await getAccountsByRole('Parent')
+      setParents(data)
+      setFilteredParents(data)
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch parents')
+      console.error('Error fetching parents:', err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleViewDetail = (parent: Parent) => {
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this parent account?')) {
+      try {
+        await deleteAccount(id)
+        fetchParents()
+      } catch (err: any) {
+        alert(err.message || 'Failed to delete parent')
+      }
+    }
+  }
+
+  const handleViewDetail = (parent: User) => {
     setSelectedParent(parent)
     setDetailOpen(true)
   }
 
+  const handleEdit = (parent: User) => {
+    setSelectedParent(parent)
+    setEditOpen(true)
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <DashboardSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
@@ -70,7 +103,9 @@ export default function ParentsPage() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold">Parent Management</h1>
-                <p className="mt-1 text-muted-foreground">Manage parent accounts and relationships</p>
+                <p className="mt-1 text-muted-foreground">
+                  Manage parent accounts and relationships
+                </p>
               </div>
               <Button className="bg-primary">
                 <Plus className="mr-2 h-4 w-4" />
@@ -78,88 +113,171 @@ export default function ParentsPage() {
               </Button>
             </div>
 
+            {error && (
+              <div className="mb-6 rounded-lg bg-destructive/10 p-4 text-destructive">
+                {error}
+              </div>
+            )}
+
             <Card>
               <CardHeader>
-                <CardTitle>All Parents</CardTitle>
+                <CardTitle>All Parents ({filteredParents.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border text-left">
-                        <th className="pb-3 font-medium text-muted-foreground">User ID</th>
-                        <th className="pb-3 font-medium text-muted-foreground">User Name</th>
-                        <th className="pb-3 font-medium text-muted-foreground">Email</th>
-                        <th className="pb-3 font-medium text-muted-foreground">Status</th>
-                        <th className="pb-3 font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parents.map((parent) => (
-                        <tr key={parent.id} className="border-b border-border last:border-0">
-                          <td className="py-4 text-sm font-medium">{parent.id}</td>
-                          <td className="py-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage
-                                  src={`/.jpg?height=40&width=40&query=${parent.name}`}
-                                />
-                                <AvatarFallback>{parent.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium">{parent.name}</span>
-                            </div>
-                          </td>
-                          <td className="py-4 text-sm text-muted-foreground">{parent.email}</td>
-                          <td className="py-4">
-                            <Badge
-                              variant="secondary"
-                              className={
-                                parent.status === "Online"
-                                  ? "bg-green-100 text-green-700 hover:bg-green-100"
-                                  : "bg-gray-100 text-gray-700 hover:bg-gray-100"
-                              }
-                            >
-                              <span
-                                className={`mr-1.5 inline-block h-2 w-2 rounded-full ${parent.status === "Online" ? "bg-green-600" : "bg-gray-600"}`}
-                              />
-                              {parent.status}
-                            </Badge>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleViewDetail(parent)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive"
-                                onClick={() => handleDelete(parent.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
+                {isLoading ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    Loading parents...
+                  </div>
+                ) : filteredParents.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    {searchQuery
+                      ? 'No parents found matching your search.'
+                      : 'No parents found.'}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border text-left">
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            User ID
+                          </th>
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            User Name
+                          </th>
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            Full Name
+                          </th>
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            Email
+                          </th>
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            Status
+                          </th>
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {filteredParents.map((parent) => (
+                          <tr
+                            key={parent.id}
+                            className="border-b border-border last:border-0"
+                          >
+                            <td className="py-4 text-sm font-medium">
+                              {parent.id}
+                            </td>
+                            <td className="py-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage
+                                    src={`/.jpg?height=40&width=40&query=${parent.userName}`}
+                                  />
+                                  <AvatarFallback>
+                                    {parent.userName.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium">
+                                  {parent.userName}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 text-sm">
+                              {parent.fullName || 'N/A'}
+                            </td>
+                            <td className="py-4 text-sm text-muted-foreground">
+                              {parent.email}
+                            </td>
+                            <td className="py-4">
+                              <Badge
+                                variant="secondary"
+                                className={
+                                  parent.status === 'Active'
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-100'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
+                                }
+                              >
+                                <span
+                                  className={`mr-1.5 inline-block h-2 w-2 rounded-full ${
+                                    parent.status === 'Active'
+                                      ? 'bg-green-600'
+                                      : 'bg-gray-600'
+                                  }`}
+                                />
+                                {parent.status}
+                              </Badge>
+                            </td>
+                            <td className="py-4">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleViewDetail(parent)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleEdit(parent)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive"
+                                  onClick={() => handleDelete(parent.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </main>
       </div>
 
-      {selectedParent && <ParentDetailDialog parent={selectedParent} open={detailOpen} onOpenChange={setDetailOpen} />}
+      {selectedParent && (
+        <>
+          <ParentDetailDialog
+            parent={{
+              id: selectedParent.id.toString(),
+              name: selectedParent.fullName || selectedParent.userName,
+              email: selectedParent.email,
+              status: selectedParent.status === 'Active' ? 'Online' : 'Offline',
+              children: [],
+            }}
+            open={detailOpen}
+            onOpenChange={setDetailOpen}
+          />
+          <UserEditDialog
+            user={selectedParent}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            onUpdate={fetchParents}
+          />
+        </>
+      )}
     </div>
+  )
+}
+
+// Wrap with SearchProvider
+export default function ParentsPage() {
+  return (
+    <SearchProvider>
+      <ParentsPageContent />
+    </SearchProvider>
   )
 }
