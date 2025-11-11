@@ -8,7 +8,7 @@ export interface Enrollment {
   courseId: number
   courseTitle: string
   enrollmentDate: string
-  status: number // 0 = Inactive, 1 = Active
+  status: string // "Active" or "Inactive"
 }
 
 // Paginated Enrollment Response
@@ -124,13 +124,13 @@ export const deleteEnrollment = async (
 }
 
 // Helper function to get status label
-export const getStatusLabel = (status: number): string => {
-  return status === 1 ? 'Active' : 'Inactive'
+export const getStatusLabel = (status: string): string => {
+  return status
 }
 
 // Helper function to get status color
-export const getStatusColor = (status: number): string => {
-  return status === 1
+export const getStatusColor = (status: string): string => {
+  return status === 'Active'
     ? 'bg-green-100 text-green-700'
     : 'bg-gray-100 text-gray-700'
 }

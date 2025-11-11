@@ -1,7 +1,7 @@
 'use client'
 
-import { AssignmentCreateDialog } from '@/components/admin/assignments/assignment-create-dialog'
-import { AssignmentEditDialog } from '@/components/admin/assignments/assignment-edit-dialog'
+import { LivestreamCreateDialog } from '@/components/admin/livestreams/livestream-create-dialog'
+import { LivestreamEditDialog } from '@/components/admin/livestreams/livestream-edit-dialog'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { Button } from '@/components/ui/Button'
@@ -9,34 +9,36 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchProvider, useSearch } from '@/context/SearchContext'
 import {
-  Assignment,
-  deleteAssignment,
-  getAssignments,
-} from '@/services/assignmentService'
+  Livestream,
+  deleteLivestream,
+  getLivestreams,
+} from '@/services/livestreamService'
 import {
-  BookOpen,
   Calendar,
-  FileText,
+  DollarSign,
+  Eye,
   Pencil,
   Plus,
   Trash2,
   Users,
+  Video,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-function AssignmentsPageContent() {
+function LivestreamsPageContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
-  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(
-    null
-  )
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [filteredAssignments, setFilteredAssignments] = useState<Assignment[]>(
+  const [selectedLivestream, setSelectedLivestream] =
+    useState<Livestream | null>(null)
+  const [livestreams, setLivestreams] = useState<Livestream[]>([])
+  const [filteredLivestreams, setFilteredLivestreams] = useState<Livestream[]>(
     []
   )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -47,58 +49,92 @@ function AssignmentsPageContent() {
   // Use search from header context
   const { searchQuery } = useSearch()
 
-  // Fetch assignments from API
+  // Fetch livestreams from API
   useEffect(() => {
-    fetchAssignments()
+    fetchLivestreams()
   }, [currentPage]) // Refetch when page changes
 
-  // Filter assignments based on search query
+  // Filter livestreams based on search query
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredAssignments(assignments)
+      setFilteredLivestreams(livestreams)
     } else {
       const query = searchQuery.toLowerCase()
-      const filtered = assignments.filter(
-        (assignment) =>
-          assignment.title.toLowerCase().includes(query) ||
-          assignment.id.toString().includes(query) ||
-          assignment.courseId.toString().includes(query)
+      const filtered = livestreams.filter(
+        (livestream) =>
+          livestream.title.toLowerCase().includes(query) ||
+          livestream.id.toString().includes(query) ||
+          livestream.courseId.toString().includes(query) ||
+          livestream.teacherId.toString().includes(query)
       )
-      setFilteredAssignments(filtered)
+      setFilteredLivestreams(filtered)
     }
-  }, [searchQuery, assignments])
+  }, [searchQuery, livestreams])
 
-  const fetchAssignments = async () => {
+  const fetchLivestreams = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await getAssignments(currentPage, pageSize)
-      setAssignments(response.data)
-      setFilteredAssignments(response.data)
+      const response = await getLivestreams(currentPage, pageSize)
+      setLivestreams(response.data)
+      setFilteredLivestreams(response.data)
       setTotalPages(response.totalPages)
       setTotalCount(response.totalCount)
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch assignments')
-      console.error('Error fetching assignments:', err)
+      setError(err.message || 'Failed to fetch livestreams')
+      console.error('Error fetching livestreams:', err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this assignment?')) {
-      try {
-        await deleteAssignment(id)
-        fetchAssignments()
-      } catch (err: any) {
-        alert(err.message || 'Failed to delete assignment')
-      }
-    }
+  const handleEdit = (livestream: Livestream) => {
+    setSelectedLivestream(livestream)
+    setEditOpen(true)
   }
 
-  const handleEdit = (assignment: Assignment) => {
-    setEditingAssignment(assignment)
-    setEditOpen(true)
+  const handleEditSuccess = () => {
+    setSuccessMessage('Livestream updated successfully!')
+    fetchLivestreams()
+    setTimeout(() => {
+      setSuccessMessage(null)
+    }, 3000)
+  }
+
+  const handleDelete = async (id: number) => {
+    // Find livestream title for better confirmation message
+    const livestream = livestreams.find((ls) => ls.id === id)
+    const confirmMessage = livestream
+      ? `Are you sure you want to delete "${livestream.title}"?\n\nThis action cannot be undone.`
+      : 'Are you sure you want to delete this livestream?\n\nThis action cannot be undone.'
+
+    if (confirm(confirmMessage)) {
+      try {
+        setDeletingId(id)
+        setError(null)
+        setSuccessMessage(null)
+
+        await deleteLivestream(id)
+
+        // Show success message
+        setSuccessMessage(
+          `Livestream "${livestream?.title || id}" deleted successfully!`
+        )
+
+        // Refresh the list
+        await fetchLivestreams()
+
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage(null)
+        }, 3000)
+      } catch (err: any) {
+        setError(err.message || 'Failed to delete livestream')
+        console.error('Error deleting livestream:', err)
+      } finally {
+        setDeletingId(null)
+      }
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -106,7 +142,16 @@ function AssignmentsPageContent() {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
+  }
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price)
   }
 
   return (
@@ -116,6 +161,19 @@ function AssignmentsPageContent() {
         onClose={() => setSidebarOpen(false)}
       />
 
+      <LivestreamCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSuccess={fetchLivestreams}
+      />
+
+      <LivestreamEditDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSuccess={handleEditSuccess}
+        livestream={selectedLivestream}
+      />
+
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -123,9 +181,9 @@ function AssignmentsPageContent() {
           <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 lg:px-8">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold">Assignment Management</h1>
+                <h1 className="text-3xl font-bold">Livestream Management</h1>
                 <p className="mt-1 text-muted-foreground">
-                  Manage all assignments and track submissions
+                  Manage livestream sessions and schedules
                 </p>
               </div>
               <Button
@@ -133,7 +191,7 @@ function AssignmentsPageContent() {
                 onClick={() => setCreateOpen(true)}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Assignment
+                Add Livestream
               </Button>
             </div>
 
@@ -143,22 +201,28 @@ function AssignmentsPageContent() {
               </div>
             )}
 
+            {successMessage && (
+              <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700 border border-green-200">
+                ✓ {successMessage}
+              </div>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>
-                  All Assignments ({filteredAssignments.length})
+                  All Livestreams ({filteredLivestreams.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <div className="py-8 text-center text-muted-foreground">
-                    Loading assignments...
+                    Loading livestreams...
                   </div>
-                ) : filteredAssignments.length === 0 ? (
+                ) : filteredLivestreams.length === 0 ? (
                   <div className="py-8 text-center text-muted-foreground">
                     {searchQuery
-                      ? 'No assignments found matching your search.'
-                      : 'No assignments found.'}
+                      ? 'No livestreams found matching your search.'
+                      : 'No livestreams found.'}
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -169,16 +233,22 @@ function AssignmentsPageContent() {
                             ID
                           </th>
                           <th className="pb-3 font-medium text-muted-foreground">
-                            Assignment Title
+                            Title
                           </th>
                           <th className="pb-3 font-medium text-muted-foreground">
                             Course ID
                           </th>
                           <th className="pb-3 font-medium text-muted-foreground">
-                            Created Date
+                            Teacher ID
                           </th>
                           <th className="pb-3 font-medium text-muted-foreground">
-                            Submissions
+                            Schedule
+                          </th>
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            Price
+                          </th>
+                          <th className="pb-3 font-medium text-muted-foreground">
+                            Registrations
                           </th>
                           <th className="pb-3 font-medium text-muted-foreground">
                             Actions
@@ -186,57 +256,60 @@ function AssignmentsPageContent() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredAssignments.map((assignment) => (
+                        {filteredLivestreams.map((livestream) => (
                           <tr
-                            key={assignment.id}
+                            key={livestream.id}
                             className="border-b border-border last:border-0"
                           >
                             <td className="py-4 text-sm font-medium">
-                              {assignment.id}
+                              {livestream.id}
                             </td>
                             <td className="py-4">
                               <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                                  <FileText className="h-5 w-5 text-blue-600" />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
+                                  <Video className="h-5 w-5 text-red-600" />
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="font-medium">
-                                    {assignment.title}
+                                    {livestream.title}
                                   </span>
-                                  {assignment.description && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {assignment.description}
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </td>
                             <td className="py-4 text-sm">
                               <Badge variant="outline" className="gap-1">
-                                <BookOpen className="h-3 w-3" />
-                                Course {assignment.courseId}
+                                Course {livestream.courseId}
+                              </Badge>
+                            </td>
+                            <td className="py-4 text-sm">
+                              <Badge variant="outline" className="gap-1">
+                                Teacher {livestream.teacherId}
                               </Badge>
                             </td>
                             <td className="py-4 text-sm">
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Calendar className="h-4 w-4" />
-                                {formatDate(assignment.createdAt)}
+                                {formatDate(livestream.schedule)}
                               </div>
                             </td>
                             <td className="py-4">
-                              <div className="flex items-center gap-2">
-                                <Badge
-                                  variant="secondary"
-                                  className={
-                                    assignment.submissionCount > 0
-                                      ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
-                                  }
-                                >
-                                  <Users className="mr-1 h-3 w-3" />
-                                  {assignment.submissionCount} submissions
-                                </Badge>
+                              <div className="flex items-center gap-1 text-sm font-medium text-green-600">
+                                <DollarSign className="h-4 w-4" />
+                                {formatPrice(livestream.price)}
                               </div>
+                            </td>
+                            <td className="py-4">
+                              <Badge
+                                variant="secondary"
+                                className={
+                                  livestream.registrationCount > 0
+                                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-100'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
+                                }
+                              >
+                                <Users className="mr-1 h-3 w-3" />
+                                {livestream.registrationCount}
+                              </Badge>
                             </td>
                             <td className="py-4">
                               <div className="flex items-center gap-2">
@@ -244,7 +317,16 @@ function AssignmentsPageContent() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
-                                  onClick={() => handleEdit(assignment)}
+                                  title="View Details"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleEdit(livestream)}
+                                  title="Edit"
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
@@ -252,9 +334,15 @@ function AssignmentsPageContent() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-destructive"
-                                  onClick={() => handleDelete(assignment.id)}
+                                  onClick={() => handleDelete(livestream.id)}
+                                  disabled={deletingId === livestream.id}
+                                  title="Delete"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  {deletingId === livestream.id ? (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-destructive border-t-transparent" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </div>
                             </td>
@@ -268,12 +356,12 @@ function AssignmentsPageContent() {
             </Card>
 
             {/* Pagination */}
-            {!isLoading && filteredAssignments.length > 0 && (
+            {!isLoading && filteredLivestreams.length > 0 && (
               <div className="mt-6 flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * pageSize + 1} to{' '}
                   {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{' '}
-                  assignments
+                  livestreams
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -317,28 +405,15 @@ function AssignmentsPageContent() {
           </div>
         </main>
       </div>
-
-      <AssignmentCreateDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={fetchAssignments}
-      />
-
-      <AssignmentEditDialog
-        assignment={editingAssignment}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        onSuccess={fetchAssignments}
-      />
     </div>
   )
 }
 
 // Wrap with SearchProvider
-export default function AssignmentsPage() {
+export default function LivestreamsPage() {
   return (
     <SearchProvider>
-      <AssignmentsPageContent />
+      <LivestreamsPageContent />
     </SearchProvider>
   )
 }

@@ -24,13 +24,19 @@ function TeachersPageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 10 // 10 items per page
+
   // Use search from header context
   const { searchQuery } = useSearch()
 
   // Fetch teachers from API
   useEffect(() => {
     fetchTeachers()
-  }, [])
+  }, [currentPage]) // Refetch when page changes
 
   // Filter teachers based on search query
   useEffect(() => {
@@ -55,10 +61,12 @@ function TeachersPageContent() {
       setError(null)
 
       // Dynamic import
-      const { getAccountsByRole } = await import('@/services/userService')
-      const data = await getAccountsByRole('Teacher')
-      setTeachers(data)
-      setFilteredTeachers(data)
+      const { getTeachers } = await import('@/services/userService')
+      const response = await getTeachers(currentPage, pageSize)
+      setTeachers(response.data)
+      setFilteredTeachers(response.data)
+      setTotalPages(response.totalPages)
+      setTotalCount(response.totalCount)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch teachers')
       console.error('Error fetching teachers:', err)
@@ -244,6 +252,54 @@ function TeachersPageContent() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Pagination */}
+            {!isLoading && filteredTeachers.length > 0 && (
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(currentPage - 1) * pageSize + 1} to{' '}
+                  {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{' '}
+                  teachers
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="min-w-[2.5rem]"
+                        >
+                          {page}
+                        </Button>
+                      )
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>

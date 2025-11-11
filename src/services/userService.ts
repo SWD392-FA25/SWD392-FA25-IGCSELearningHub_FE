@@ -30,12 +30,68 @@ export const getAccounts = async (
   )
 }
 
-// Get accounts by role
+// Get accounts by role (returns all users of that role)
 export const getAccountsByRole = async (
   role: 'Admin' | 'Teacher' | 'Student' | 'Parent'
 ): Promise<User[]> => {
   const allUsers = await getAllAccounts()
   return allUsers.filter((user) => user.role === role)
+}
+
+// Get accounts by role with client-side pagination
+export const getAccountsByRolePaginated = async (
+  role: 'Admin' | 'Teacher' | 'Student' | 'Parent',
+  pageNumber: number = 1,
+  pageSize: number = 10
+): Promise<PaginatedResponse<User>> => {
+  // Get all users of this role
+  const allUsers = await getAccountsByRole(role)
+
+  // Calculate pagination
+  const totalCount = allUsers.length
+  const totalPages = Math.ceil(totalCount / pageSize)
+  const startIndex = (pageNumber - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedData = allUsers.slice(startIndex, endIndex)
+
+  // Return paginated response
+  return {
+    pageNumber,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasNext: pageNumber < totalPages,
+    hasPrevious: pageNumber > 1,
+    succeeded: true,
+    status: 'success',
+    statusCode: 200,
+    message: `Retrieved ${paginatedData.length} ${role.toLowerCase()}s`,
+    data: paginatedData,
+    details: null,
+    errors: null,
+  }
+}
+
+// Convenience functions for specific roles with pagination
+export const getStudents = async (
+  pageNumber: number = 1,
+  pageSize: number = 10
+): Promise<PaginatedResponse<User>> => {
+  return getAccountsByRolePaginated('Student', pageNumber, pageSize)
+}
+
+export const getTeachers = async (
+  pageNumber: number = 1,
+  pageSize: number = 10
+): Promise<PaginatedResponse<User>> => {
+  return getAccountsByRolePaginated('Teacher', pageNumber, pageSize)
+}
+
+export const getParents = async (
+  pageNumber: number = 1,
+  pageSize: number = 10
+): Promise<PaginatedResponse<User>> => {
+  return getAccountsByRolePaginated('Parent', pageNumber, pageSize)
 }
 
 // Get single account by ID

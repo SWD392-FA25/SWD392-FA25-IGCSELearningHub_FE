@@ -6,9 +6,11 @@ import {
   ChevronDown,
   FileText,
   GraduationCap,
+  Package,
   School,
   UserPlus,
   Users,
+  Video,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -85,6 +87,22 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           >
             <UserPlus className="h-5 w-5" />
             <span>Enrollment Management</span>
+          </Link>
+
+          <Link
+            href="/pages/admin/livestreams"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            <Video className="h-5 w-5" />
+            <span>Livestream Management</span>
+          </Link>
+
+          <Link
+            href="/pages/admin/packages"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            <Package className="h-5 w-5" />
+            <span>Package Management</span>
           </Link>
 
           <div>

@@ -31,7 +31,7 @@ interface AssignmentResponse {
 // Get all assignments with pagination
 export const getAssignments = async (
   pageNumber: number = 1,
-  pageSize: number = 20
+  pageSize: number = 10
 ): Promise<AssignmentResponse> => {
   return fetchWithAuth<AssignmentResponse>(
     `/admin/assignments?pageNumber=${pageNumber}&pageSize=${pageSize}`

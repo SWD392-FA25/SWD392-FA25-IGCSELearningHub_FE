@@ -36,7 +36,7 @@ interface CourseResponse {
 // Get all courses with pagination
 export const getCourses = async (
   pageNumber: number = 1,
-  pageSize: number = 20
+  pageSize: number = 10
 ): Promise<CourseResponse> => {
   return fetchWithAuth<CourseResponse>(
     `/courses?pageNumber=${pageNumber}&pageSize=${pageSize}`
