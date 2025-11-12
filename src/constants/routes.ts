@@ -1,1 +1,8 @@
-﻿export const ROUTES={HOME:"/",EXAMS:"/exams",LOGIN:"/login"} as const;
+﻿export const ROUTES = {
+  HOME: "/",
+  EXAMS: "/exams",
+  LOGIN: "/login",
+  REGISTER: "/register",
+  COURSES: "/courses",
+  PROFILE: "/profile"
+} as const;

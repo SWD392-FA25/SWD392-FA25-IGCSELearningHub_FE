@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 
@@ -198,12 +197,12 @@ export default function AboutPage() {
               Start your IGCSE journey today and experience the difference quality education can make in your academic
               success.
             </p>
-            <Link
+            <a
               href="/courses"
               className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
             >
               Explore Courses
-            </Link>
+            </a>
           </div>
         </section>
       </main>

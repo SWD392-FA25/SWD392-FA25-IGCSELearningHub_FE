@@ -124,3 +124,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for form validation */
+.border-destructive {
+  border-color: hsl(var(--destructive)) !important;
+}
+
+.opacity-50-important {
+  background-color: rgb(0 0 0 / 0.5) !important;
+}
