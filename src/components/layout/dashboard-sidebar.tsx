@@ -129,12 +129,12 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
                 >
                   Student Role
                 </Link>
-                <Link
+                {/* <Link
                   href="/pages/admin/parents"
                   className="rounded-lg px-3 py-2 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                 >
                   Parent Role
-                </Link>
+                </Link> */}
               </div>
             )}
           </div>

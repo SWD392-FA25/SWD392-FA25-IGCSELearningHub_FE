@@ -53,13 +53,13 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             <span className="sr-only">Notifications</span>
           </Button>
 
-          <Avatar className="h-9 w-9">
+          {/* <Avatar className="h-9 w-9">
             <AvatarImage
               src="/56d65f27ec9f2c3fa6dc13e1d59f9a26.jpg"
               alt="User"
             />
             <AvatarFallback>AD</AvatarFallback>
-          </Avatar>
+          </Avatar> */}
         </div>
       </div>
     </header>

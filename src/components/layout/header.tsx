@@ -48,14 +48,14 @@ export function Header() {
             >
               About
             </Link>
-            <Link
+            {/* <Link
               href="/teacher"
               className={`text-sm font-medium transition-colors ${
                 isActive("/teacher") ? "text-primary" : "text-foreground hover:text-primary"
               }`}
             >
               Teacher
-            </Link>
+            </Link> */}
           </nav>
 
           {/* Desktop Login Button */}
