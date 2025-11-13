@@ -1,11 +1,14 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import type React from 'react'
 import './globals.css'
 
-const geist = Geist({ subsets: ['latin'] })
-const geistMono = Geist_Mono({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'IGCSE-Learning Hub',
@@ -21,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geist.className} ${geistMono.className} font-sans antialiased`}
+        className={`${inter.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         {children}
