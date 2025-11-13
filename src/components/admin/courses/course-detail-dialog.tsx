@@ -1,7 +1,6 @@
 "use client"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import { BookOpen, Users, DollarSign, Calendar, FileText, Video, ClipboardCheck, GraduationCap, Award } from "lucide-react"
 import { Course } from "@/services/courseService"
 
@@ -43,13 +42,13 @@ export function CourseDetailDialog({ course, open, onOpenChange }: CourseDetailD
             <div className="flex-1">
               <h3 className="text-xl font-semibold">{course.title}</h3>
               <p className="text-sm text-muted-foreground mt-1">Course ID: {course.id}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="font-medium">
+              <div className="flex items-center gap-3 mt-2">
+                <span className="font-semibold text-foreground">
                   {course.level}
-                </Badge>
-                <Badge variant="secondary" className="font-medium">
+                </span>
+                <span className="font-semibold text-foreground">
                   {course.subjectGroup}
-                </Badge>
+                </span>
               </div>
             </div>
           </div>
@@ -79,15 +78,15 @@ export function CourseDetailDialog({ course, open, onOpenChange }: CourseDetailD
           )}
 
           {/* Stats Grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-border p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
                   <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Price</p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground mb-1">Price</p>
+                  <p className="text-base font-bold text-green-600 dark:text-green-400">
                     {formatCurrency(course.price)}
                   </p>
                 </div>

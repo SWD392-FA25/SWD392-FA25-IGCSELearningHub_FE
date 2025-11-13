@@ -5,8 +5,10 @@ export interface Package {
   id: number
   name: string
   price: number
-  courseCount: number
+  courseCount?: number
+  courses?: any[]
   createdAt: string
+  description?: string
 }
 
 // Paginated Package Response

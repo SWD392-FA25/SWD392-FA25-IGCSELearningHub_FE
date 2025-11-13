@@ -15,7 +15,12 @@ import { BookOpen, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 function CoursesPageContent() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768
+    }
+    return true
+  })
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [editingCourse, setEditingCourse] = useState<Course | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)

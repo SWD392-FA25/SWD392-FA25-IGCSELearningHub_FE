@@ -2,11 +2,25 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getStoredUser, clearAuthData } from "@/services/authService"
 
 export function Header() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    // Check authentication status on mount
+    const userData = getStoredUser()
+    setUser(userData)
+  }, [])
+
+  const handleLogout = () => {
+    clearAuthData()
+    setUser(null)
+    window.location.href = '/login'
+  }
 
   const isActive = (path: string) => pathname === path
 
@@ -58,13 +72,27 @@ export function Header() {
             </Link> */}
           </nav>
 
-          {/* Desktop Login Button */}
-          <Link
-            href="/login"
-            className="hidden md:inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
-          >
-            Login
-          </Link>
+          {/* Desktop Login/User Button */}
+          {user ? (
+            <div className="hidden md:flex items-center gap-3">
+              <span className="text-sm font-medium text-foreground">
+                {user.fullName || user.userName}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="hidden md:inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+            >
+              Login
+            </Link>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -117,13 +145,30 @@ export function Header() {
               >
                 Teacher
               </Link>
-              <Link
-                href="/login"
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
+              {user ? (
+                <>
+                  <div className="px-4 py-2 text-sm font-medium text-foreground border-t border-border">
+                    {user.fullName || user.userName}
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setIsMobileMenuOpen(false)
+                    }}
+                    className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              )}
             </nav>
           </div>
         )}

@@ -1,6 +1,7 @@
 'use client'
 
 import { LivestreamCreateDialog } from '@/components/admin/livestreams/livestream-create-dialog'
+import { LivestreamDetailDialog } from '@/components/admin/livestreams/livestream-detail-dialog'
 import { LivestreamEditDialog } from '@/components/admin/livestreams/livestream-edit-dialog'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
@@ -35,6 +36,7 @@ function LivestreamsPageContent() {
   })
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [selectedLivestream, setSelectedLivestream] =
     useState<Livestream | null>(null)
   const [livestreams, setLivestreams] = useState<Livestream[]>([])
@@ -136,6 +138,11 @@ function LivestreamsPageContent() {
     setEditOpen(true)
   }
 
+  const handleViewDetail = (livestream: Livestream) => {
+    setSelectedLivestream(livestream)
+    setDetailOpen(true)
+  }
+
   const handleEditSuccess = () => {
     setSuccessMessage('Livestream updated successfully!')
     fetchLivestreams()
@@ -208,6 +215,12 @@ function LivestreamsPageContent() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSuccess={fetchLivestreams}
+      />
+
+      <LivestreamDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        livestream={selectedLivestream}
       />
 
       <LivestreamEditDialog
@@ -356,6 +369,7 @@ function LivestreamsPageContent() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
+                                  onClick={() => handleViewDetail(livestream)}
                                   title="View Details"
                                 >
                                   <Eye className="h-4 w-4" />

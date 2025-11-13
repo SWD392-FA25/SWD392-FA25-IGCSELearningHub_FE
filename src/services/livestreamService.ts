@@ -74,3 +74,14 @@ export const deleteLivestream = async (id: number): Promise<void> => {
     method: 'DELETE',
   })
 }
+
+// Get livestreams by teacher ID
+export const getLivestreamsByTeacherId = async (
+  teacherId: number,
+  pageNumber: number = 1,
+  pageSize: number = 10
+): Promise<LivestreamResponse> => {
+  return fetchWithAuth<LivestreamResponse>(
+    `/admin/livestreams?pageNumber=${pageNumber}&pageSize=${pageSize}`
+  )
+}
