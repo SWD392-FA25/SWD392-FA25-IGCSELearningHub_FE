@@ -96,8 +96,21 @@ export const getParents = async (
 
 // Get single account by ID
 export const getAccountById = async (id: number): Promise<User> => {
-  return fetchWithAuth<User>(`/Accounts/${id}`)
+  const response = await fetchWithAuth<{
+    succeeded: boolean
+    status: string
+    statusCode: number
+    message: string
+    data: User
+    details: null
+    errors: null
+  }>(`/Accounts/${id}`)
+  
+  return response.data
 }
+
+// Alias for getUserById
+export const getUserById = getAccountById
 
 // Delete account
 export const deleteAccount = async (id: number): Promise<void> => {

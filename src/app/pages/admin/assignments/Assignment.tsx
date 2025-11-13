@@ -5,7 +5,6 @@ import { AssignmentEditDialog } from '@/components/admin/assignments/assignment-
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchProvider, useSearch } from '@/context/SearchContext'
 import {
@@ -13,6 +12,7 @@ import {
   deleteAssignment,
   getAssignments,
 } from '@/services/assignmentService'
+import { getCourseById, Course } from '@/services/courseService'
 import {
   BookOpen,
   Calendar,
@@ -25,7 +25,12 @@ import {
 import { useEffect, useState } from 'react'
 
 function AssignmentsPageContent() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768
+    }
+    return true
+  })
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(
@@ -37,6 +42,7 @@ function AssignmentsPageContent() {
   )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [courseMap, setCourseMap] = useState<Map<number, string>>(new Map())
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -77,6 +83,28 @@ function AssignmentsPageContent() {
       setFilteredAssignments(response.data)
       setTotalPages(response.totalPages)
       setTotalCount(response.totalCount)
+
+      // Fetch course titles for all unique courseIds
+      const uniqueCourseIds = [...new Set(response.data.map(a => a.courseId))]
+      const newCourseMap = new Map<number, string>()
+      
+      console.log('Fetching courses for IDs:', uniqueCourseIds)
+      
+      await Promise.all(
+        uniqueCourseIds.map(async (courseId) => {
+          try {
+            const course = await getCourseById(courseId)
+            console.log(`Course ${courseId}:`, course)
+            newCourseMap.set(courseId, course.title)
+          } catch (error) {
+            console.error(`Failed to fetch course ${courseId}:`, error)
+            newCourseMap.set(courseId, `Course ${courseId}`)
+          }
+        })
+      )
+      
+      console.log('Course map:', newCourseMap)
+      setCourseMap(newCourseMap)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch assignments')
       console.error('Error fetching assignments:', err)
@@ -120,7 +148,7 @@ function AssignmentsPageContent() {
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         <main className="flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 lg:px-8">
+          <div className="container mx-auto max-w-full px-4 py-8 md:px-6 lg:px-8">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold">Assignment Management</h1>
@@ -129,10 +157,10 @@ function AssignmentsPageContent() {
                 </p>
               </div>
               <Button
-                className="bg-primary"
+                className="bg-primary hover:bg-primary/90"
                 onClick={() => setCreateOpen(true)}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                {/* <Plus className="mr-2 h-4 w-4" /> */}
                 Add Assignment
               </Button>
             </div>
@@ -143,44 +171,54 @@ function AssignmentsPageContent() {
               </div>
             )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  All Assignments ({filteredAssignments.length})
-                </CardTitle>
+            <Card className="shadow-sm">
+              <CardHeader className="border-b bg-muted/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <CardTitle>All Assignments</CardTitle>
+                  </div>
+                  <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+                    {filteredAssignments.length} Total
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {isLoading ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    Loading assignments...
+                  <div className="py-12 text-center text-muted-foreground">
+                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                    <p className="mt-4">Loading assignments...</p>
                   </div>
                 ) : filteredAssignments.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    {searchQuery
-                      ? 'No assignments found matching your search.'
-                      : 'No assignments found.'}
+                  <div className="py-12 text-center text-muted-foreground">
+                    <FileText className="mx-auto h-12 w-12 opacity-20" />
+                    <p className="mt-4">
+                      {searchQuery
+                        ? 'No assignments found matching your search.'
+                        : 'No assignments found. Create your first assignment!'}
+                    </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-border text-left">
-                          <th className="pb-3 font-medium text-muted-foreground">
+                        <tr className="border-b bg-muted/30 text-left">
+                          <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                             ID
                           </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
+                          <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                             Assignment Title
                           </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
-                            Course ID
+                          <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
+                            Course Name
                           </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
+                          <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                             Created Date
                           </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
+                          <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                             Submissions
                           </th>
-                          <th className="pb-3 font-medium text-muted-foreground">
+                          <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                             Actions
                           </th>
                         </tr>
@@ -189,70 +227,62 @@ function AssignmentsPageContent() {
                         {filteredAssignments.map((assignment) => (
                           <tr
                             key={assignment.id}
-                            className="border-b border-border last:border-0"
+                            className="border-b transition-colors hover:bg-muted/50 last:border-0"
                           >
-                            <td className="py-4 text-sm font-medium">
+                            <td className="px-6 py-4 text-sm font-medium">
                               {assignment.id}
                             </td>
-                            <td className="py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                                  <FileText className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {assignment.title}
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-foreground">
+                                  {assignment.title}
+                                </span>
+                                {assignment.description && (
+                                  <span className="mt-1 text-xs text-muted-foreground line-clamp-1">
+                                    {assignment.description}
                                   </span>
-                                  {assignment.description && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {assignment.description}
-                                    </span>
-                                  )}
-                                </div>
+                                )}
                               </div>
                             </td>
-                            <td className="py-4 text-sm">
-                              <Badge variant="outline" className="gap-1">
-                                <BookOpen className="h-3 w-3" />
-                                Course {assignment.courseId}
-                              </Badge>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                  {courseMap.get(assignment.courseId) || `Course ${assignment.courseId}`}
+                                </span>
+                              </div>
                             </td>
-                            <td className="py-4 text-sm">
+                            <td className="px-6 py-4 text-sm">
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Calendar className="h-4 w-4" />
-                                {formatDate(assignment.createdAt)}
+                                <span>{formatDate(assignment.createdAt)}</span>
                               </div>
                             </td>
-                            <td className="py-4">
+                            <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
-                                <Badge
-                                  variant="secondary"
-                                  className={
-                                    assignment.submissionCount > 0
-                                      ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
-                                  }
-                                >
-                                  <Users className="mr-1 h-3 w-3" />
-                                  {assignment.submissionCount} submissions
-                                </Badge>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                  {assignment.submissionCount}
+                                </span>
                               </div>
                             </td>
-                            <td className="py-4">
+                            <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-9 w-9 hover:bg-primary/10 hover:text-primary"
                                   onClick={() => handleEdit(assignment)}
+                                  title="Edit assignment"
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-destructive"
+                                  className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                   onClick={() => handleDelete(assignment.id)}
+                                  title="Delete assignment"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -269,11 +299,11 @@ function AssignmentsPageContent() {
 
             {/* Pagination */}
             {!isLoading && filteredAssignments.length > 0 && (
-              <div className="mt-6 flex items-center justify-between">
+              <div className="mt-6 flex items-center justify-between rounded-lg border bg-card p-4">
                 <div className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * pageSize + 1} to{' '}
-                  {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{' '}
-                  assignments
+                  Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+                  <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, totalCount)}</span> of{' '}
+                  <span className="font-medium text-foreground">{totalCount}</span> assignments
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -283,23 +313,32 @@ function AssignmentsPageContent() {
                       setCurrentPage((prev) => Math.max(1, prev - 1))
                     }
                     disabled={currentPage === 1}
+                    className="h-9"
                   >
                     Previous
                   </Button>
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
+                    {(() => {
+                      const maxVisible = 5
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1)
+                      
+                      if (endPage - startPage + 1 < maxVisible) {
+                        startPage = Math.max(1, endPage - maxVisible + 1)
+                      }
+                      
+                      return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
                         <Button
                           key={page}
                           variant={currentPage === page ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => setCurrentPage(page)}
-                          className="min-w-[2.5rem]"
+                          className="h-9 min-w-[2.5rem]"
                         >
                           {page}
                         </Button>
-                      )
-                    )}
+                      ))
+                    })()}
                   </div>
                   <Button
                     variant="outline"
@@ -308,6 +347,7 @@ function AssignmentsPageContent() {
                       setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                     }
                     disabled={currentPage === totalPages}
+                    className="h-9"
                   >
                     Next
                   </Button>

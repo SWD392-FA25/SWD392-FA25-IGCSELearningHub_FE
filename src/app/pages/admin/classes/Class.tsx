@@ -19,7 +19,12 @@ interface Class {
 }
 
 export default function ClassesPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768
+    }
+    return true
+  })
   const [selectedClass, setSelectedClass] = useState<Class | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 

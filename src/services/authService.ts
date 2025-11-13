@@ -75,9 +75,7 @@ export const getRedirectUrlByRole = (
 ): string => {
   const roleRedirects: Record<string, string> = {
     Admin: '/pages/admin/dashboard',
-    Teacher: '/pages/teacher/dashboard',
-    Student: '/pages/student/dashboard',
-    Parent: '/pages/parent/dashboard',
+    
   }
 
   return roleRedirects[role] || '/'

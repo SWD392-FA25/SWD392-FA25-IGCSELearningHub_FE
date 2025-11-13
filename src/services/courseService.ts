@@ -45,7 +45,17 @@ export const getCourses = async (
 
 // Get single course by ID
 export const getCourseById = async (id: number): Promise<Course> => {
-  return fetchWithAuth<Course>(`/courses/${id}`)
+  const response = await fetchWithAuth<{
+    succeeded: boolean
+    status: string
+    statusCode: number
+    message: string
+    data: Course
+    details: null
+    errors: null
+  }>(`/courses/${id}`)
+  
+  return response.data
 }
 
 // Delete course

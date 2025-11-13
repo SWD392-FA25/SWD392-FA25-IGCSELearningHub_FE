@@ -4,14 +4,12 @@ import { EnrollmentCreateDialog } from '@/components/admin/enrollments/enrollmen
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchProvider, useSearch } from '@/context/SearchContext'
 import {
   Enrollment,
   deleteEnrollment,
   getEnrollments,
-  getStatusColor,
   getStatusLabel,
 } from '@/services/enrollmentService'
 import {
@@ -26,7 +24,12 @@ import {
 import { useEffect, useState } from 'react'
 
 function EnrollmentsPageContent() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768
+    }
+    return true
+  })
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
@@ -132,7 +135,7 @@ function EnrollmentsPageContent() {
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         <main className="flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 lg:px-8">
+          <div className="container mx-auto max-w-full px-4 py-8 md:px-6 lg:px-8">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold">Enrollment Management</h1>
@@ -141,10 +144,10 @@ function EnrollmentsPageContent() {
                 </p>
               </div>
               <Button
-                className="bg-primary"
+                className="bg-primary hover:bg-primary/90"
                 onClick={() => setCreateOpen(true)}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                {/* <Plus className="mr-2 h-4 w-4" /> */}
                 Add Enrollment
               </Button>
             </div>
@@ -157,7 +160,7 @@ function EnrollmentsPageContent() {
 
             {/* Summary Cards */}
             <div className="mb-6 grid gap-4 md:grid-cols-3">
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -175,7 +178,7 @@ function EnrollmentsPageContent() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -197,7 +200,7 @@ function EnrollmentsPageContent() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -218,28 +221,32 @@ function EnrollmentsPageContent() {
 
             {/* Enrollments grouped by course */}
             {isLoading ? (
-              <Card>
-                <CardContent className="py-8">
+              <Card className="shadow-sm">
+                <CardContent className="py-12">
                   <div className="text-center text-muted-foreground">
-                    Loading enrollments...
+                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                    <p className="mt-4">Loading enrollments...</p>
                   </div>
                 </CardContent>
               </Card>
             ) : filteredEnrollments.length === 0 ? (
-              <Card>
-                <CardContent className="py-8">
+              <Card className="shadow-sm">
+                <CardContent className="py-12">
                   <div className="text-center text-muted-foreground">
-                    {searchQuery
-                      ? 'No enrollments found matching your search.'
-                      : 'No enrollments found.'}
+                    <Users className="mx-auto h-12 w-12 opacity-20" />
+                    <p className="mt-4">
+                      {searchQuery
+                        ? 'No enrollments found matching your search.'
+                        : 'No enrollments found. Create your first enrollment!'}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
             ) : (
               <div className="space-y-6">
                 {courseGroups.map((group) => (
-                  <Card key={group.courseId}>
-                    <CardHeader>
+                  <Card key={group.courseId} className="shadow-sm">
+                    <CardHeader className="border-b bg-muted/50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -254,29 +261,29 @@ function EnrollmentsPageContent() {
                             </p>
                           </div>
                         </div>
-                        <Badge variant="outline">
+                        <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
                           Course ID: {group.courseId}
-                        </Badge>
+                        </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-0">
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="border-b border-border text-left">
-                              <th className="pb-3 font-medium text-muted-foreground">
+                            <tr className="border-b bg-muted/30 text-left">
+                              <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                                 Enrollment ID
                               </th>
-                              <th className="pb-3 font-medium text-muted-foreground">
+                              <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                                 Student
                               </th>
-                              <th className="pb-3 font-medium text-muted-foreground">
+                              <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                                 Enrollment Date
                               </th>
-                              <th className="pb-3 font-medium text-muted-foreground">
+                              <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                                 Status
                               </th>
-                              <th className="pb-3 font-medium text-muted-foreground">
+                              <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                                 Actions
                               </th>
                             </tr>
@@ -285,59 +292,50 @@ function EnrollmentsPageContent() {
                             {group.enrollments.map((enrollment) => (
                               <tr
                                 key={enrollment.enrollmentId}
-                                className="border-b border-border last:border-0"
+                                className="border-b transition-colors hover:bg-muted/50 last:border-0"
                               >
-                                <td className="py-4 text-sm font-medium">
-                                  #{enrollment.enrollmentId}
+                                <td className="px-6 py-4 text-sm font-medium">
+                                  {enrollment.enrollmentId}
                                 </td>
-                                <td className="py-4">
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                                      <User className="h-4 w-4 text-gray-600" />
-                                    </div>
-                                    <div>
-                                      <div className="font-medium">
-                                        {enrollment.accountUserName}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        ID: {enrollment.accountId}
-                                      </div>
-                                    </div>
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-foreground">
+                                      {enrollment.accountUserName}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ID: {enrollment.accountId}
+                                    </span>
                                   </div>
                                 </td>
-                                <td className="py-4 text-sm">
+                                <td className="px-6 py-4 text-sm">
                                   <div className="flex items-center gap-2 text-muted-foreground">
                                     <Calendar className="h-4 w-4" />
-                                    {formatDate(enrollment.enrollmentDate)}
+                                    <span>{formatDate(enrollment.enrollmentDate)}</span>
                                   </div>
                                 </td>
-                                <td className="py-4">
-                                  <Badge
-                                    variant="secondary"
-                                    className={`${getStatusColor(
-                                      enrollment.status
-                                    )} hover:${getStatusColor(
-                                      enrollment.status
-                                    )}`}
-                                  >
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2">
                                     <span
-                                      className={`mr-1.5 inline-block h-2 w-2 rounded-full ${
+                                      className={`h-2 w-2 rounded-full ${
                                         enrollment.status === 'Active'
                                           ? 'bg-green-600'
                                           : 'bg-gray-600'
                                       }`}
                                     />
-                                    {getStatusLabel(enrollment.status)}
-                                  </Badge>
+                                    <span className="text-sm font-medium">
+                                      {getStatusLabel(enrollment.status)}
+                                    </span>
+                                  </div>
                                 </td>
-                                <td className="py-4">
+                                <td className="px-6 py-4">
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-destructive"
+                                    className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                     onClick={() =>
                                       handleDelete(enrollment.enrollmentId)
                                     }
+                                    title="Delete enrollment"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
@@ -355,11 +353,11 @@ function EnrollmentsPageContent() {
 
             {/* Pagination */}
             {!isLoading && filteredEnrollments.length > 0 && (
-              <div className="mt-6 flex items-center justify-between">
+              <div className="mt-6 flex items-center justify-between rounded-lg border bg-card p-4">
                 <div className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * pageSize + 1} to{' '}
-                  {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{' '}
-                  enrollments
+                  Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+                  <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, totalCount)}</span> of{' '}
+                  <span className="font-medium text-foreground">{totalCount}</span> enrollments
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -369,23 +367,32 @@ function EnrollmentsPageContent() {
                       setCurrentPage((prev) => Math.max(1, prev - 1))
                     }
                     disabled={currentPage === 1}
+                    className="h-9"
                   >
                     Previous
                   </Button>
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
+                    {(() => {
+                      const maxVisible = 5
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+                      const endPage = Math.min(totalPages, startPage + maxVisible - 1)
+                      
+                      if (endPage - startPage + 1 < maxVisible) {
+                        startPage = Math.max(1, endPage - maxVisible + 1)
+                      }
+                      
+                      return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
                         <Button
                           key={page}
                           variant={currentPage === page ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => setCurrentPage(page)}
-                          className="min-w-[2.5rem]"
+                          className="h-9 min-w-[2.5rem]"
                         >
                           {page}
                         </Button>
-                      )
-                    )}
+                      ))
+                    })()}
                   </div>
                   <Button
                     variant="outline"
@@ -394,6 +401,7 @@ function EnrollmentsPageContent() {
                       setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                     }
                     disabled={currentPage === totalPages}
+                    className="h-9"
                   >
                     Next
                   </Button>

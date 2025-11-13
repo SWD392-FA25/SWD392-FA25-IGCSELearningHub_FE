@@ -1,17 +1,60 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar"
 import { StatsCard } from "@/components/layout/stats-card"
-import { BookOpen, Users, GraduationCap, School } from "lucide-react"
+import { BookOpen, Users, GraduationCap } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function DashboardPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768
+    }
+    return true
+  })
+
+  const [stats, setStats] = useState({
+    totalCourses: 0,
+    totalStudents: 0,
+    totalTeachers: 0,
+  })
+
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  const fetchDashboardStats = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Dynamic imports to ensure client-side
+      const { getCourses } = await import('@/services/courseService')
+      const { getStudents, getTeachers } = await import('@/services/userService')
+      
+      // Fetch all stats in parallel
+      const [coursesRes, studentsRes, teachersRes] = await Promise.all([
+        getCourses(1, 1), // Just get first page to get totalCount
+        getStudents(1, 1),
+        getTeachers(1, 1),
+      ])
+      
+      setStats({
+        totalCourses: coursesRes.totalCount || 0,
+        totalStudents: studentsRes.totalCount || 0,
+        totalTeachers: teachersRes.totalCount || 0,
+      })
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const courses = [
     {
@@ -62,39 +105,32 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-white md:text-4xl">Dashboard Overview</h1>
-                  <p className="mt-2 text-white/90">Welcome back! Heres whats happening with your courses today.</p>
+                  <p className="mt-2 text-white/90">Welcome back! Heres whats happening with your app today.</p>
                 </div>
-                <Button className="bg-white text-[#624bff] hover:bg-white/90">Create New Course</Button>
+                {/* <Button className="bg-white text-[#624bff] hover:bg-white/90">Create New Course</Button> */}
               </div>
 
               {/* Stats Cards */}
-              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatsCard
                   title="Total Courses"
-                  value="24"
-                  subtitle="4 Active"
+                  value={isLoading ? "..." : stats.totalCourses.toString()}
+                  subtitle={isLoading ? "Loading..." : `${stats.totalCourses} Active`}
                   icon={BookOpen}
                   iconColor="text-white"
                 />
                 <StatsCard
                   title="Total Students"
-                  value="156"
-                  subtitle="12 New this month"
+                  value={isLoading ? "..." : stats.totalStudents.toString()}
+                  subtitle={isLoading ? "Loading..." : `${stats.totalStudents} Enrolled`}
                   icon={Users}
                   iconColor="text-white"
                 />
                 <StatsCard
                   title="Teachers"
-                  value="18"
-                  subtitle="2 On leave"
+                  value={isLoading ? "..." : stats.totalTeachers.toString()}
+                  subtitle={isLoading ? "Loading..." : `${stats.totalTeachers} Active`}
                   icon={GraduationCap}
-                  iconColor="text-white"
-                />
-                <StatsCard
-                  title="Classes"
-                  value="32"
-                  subtitle="8 Scheduled today"
-                  icon={School}
                   iconColor="text-white"
                 />
               </div>
