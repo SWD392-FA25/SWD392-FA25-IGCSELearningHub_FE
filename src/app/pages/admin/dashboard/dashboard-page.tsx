@@ -4,10 +4,36 @@ import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar"
 import { StatsCard } from "@/components/layout/stats-card"
-import { BookOpen, Users, GraduationCap } from "lucide-react"
+import { DollarSign, ShoppingCart, Users, GraduationCap, Video } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { 
+  LineChart, 
+  Line, 
+  BarChart, 
+  Bar, 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts'
+import { 
+  getKPIs, 
+  getRevenueSeries, 
+  getOrdersSeries, 
+  getEnrollmentsSeries, 
+  getUsersSeries, 
+  getLivestreamRevenueSeries,
+  type SeriesDataPoint 
+} from '@/services/analyticsService'
+
+// Transform function for chart data
+interface ChartDataPoint {
+  date: string
+  value: number
+}
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -17,11 +43,20 @@ export default function DashboardPage() {
     return true
   })
 
-  const [stats, setStats] = useState({
-    totalCourses: 0,
-    totalStudents: 0,
-    totalTeachers: 0,
+  const [kpis, setKpis] = useState({
+    revenuePaid: 0,
+    ordersPaid: 0,
+    newUsers: 0,
+    newEnrollments: 0,
+    livestreamRegistrations: 0,
+    arpu: 0,
   })
+
+  const [revenueSeries, setRevenueSeries] = useState<ChartDataPoint[]>([])
+  const [ordersSeries, setOrdersSeries] = useState<ChartDataPoint[]>([])
+  const [enrollmentsSeries, setEnrollmentsSeries] = useState<ChartDataPoint[]>([])
+  const [usersSeries, setUsersSeries] = useState<ChartDataPoint[]>([])
+  const [livestreamRevenueSeries, setLivestreamRevenueSeries] = useState<ChartDataPoint[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
 
@@ -29,26 +64,64 @@ export default function DashboardPage() {
     fetchDashboardStats()
   }, [])
 
+  const transformSeriesData = (points: SeriesDataPoint[]): ChartDataPoint[] => {
+    return points.map(point => ({
+      date: `${point.year}-${String(point.month).padStart(2, '0')}-${String(point.day).padStart(2, '0')}`,
+      value: point.value ?? point.count ?? 0
+    }))
+  }
+
   const fetchDashboardStats = async () => {
     try {
       setIsLoading(true)
       
-      // Dynamic imports to ensure client-side
-      const { getCourses } = await import('@/services/courseService')
-      const { getStudents, getTeachers } = await import('@/services/userService')
-      
-      // Fetch all stats in parallel
-      const [coursesRes, studentsRes, teachersRes] = await Promise.all([
-        getCourses(1, 1), // Just get first page to get totalCount
-        getStudents(1, 1),
-        getTeachers(1, 1),
+      // Fetch all analytics data in parallel
+      const [
+        kpisRes, 
+        revenueRes, 
+        ordersRes, 
+        enrollmentsRes, 
+        usersRes, 
+        livestreamRevenueRes
+      ] = await Promise.all([
+        getKPIs(),
+        getRevenueSeries(),
+        getOrdersSeries(),
+        getEnrollmentsSeries(),
+        getUsersSeries(),
+        getLivestreamRevenueSeries(),
       ])
       
-      setStats({
-        totalCourses: coursesRes.totalCount || 0,
-        totalStudents: studentsRes.totalCount || 0,
-        totalTeachers: teachersRes.totalCount || 0,
-      })
+      console.log('KPIs Response:', kpisRes)
+      console.log('Revenue Series Response:', revenueRes)
+      console.log('Orders Series Response:', ordersRes)
+      console.log('Enrollments Series Response:', enrollmentsRes)
+      console.log('Users Series Response:', usersRes)
+      console.log('Livestream Revenue Response:', livestreamRevenueRes)
+      
+      if (kpisRes.succeeded && kpisRes.data) {
+        setKpis(kpisRes.data)
+      }
+      
+      if (revenueRes.succeeded && revenueRes.data?.points && Array.isArray(revenueRes.data.points)) {
+        setRevenueSeries(transformSeriesData(revenueRes.data.points))
+      }
+      
+      if (ordersRes.succeeded && ordersRes.data?.points && Array.isArray(ordersRes.data.points)) {
+        setOrdersSeries(transformSeriesData(ordersRes.data.points))
+      }
+      
+      if (enrollmentsRes.succeeded && enrollmentsRes.data?.points && Array.isArray(enrollmentsRes.data.points)) {
+        setEnrollmentsSeries(transformSeriesData(enrollmentsRes.data.points))
+      }
+      
+      if (usersRes.succeeded && usersRes.data?.points && Array.isArray(usersRes.data.points)) {
+        setUsersSeries(transformSeriesData(usersRes.data.points))
+      }
+      
+      if (livestreamRevenueRes.succeeded && livestreamRevenueRes.data?.points && Array.isArray(livestreamRevenueRes.data.points)) {
+        setLivestreamRevenueSeries(transformSeriesData(livestreamRevenueRes.data.points))
+      }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error)
     } finally {
@@ -56,40 +129,17 @@ export default function DashboardPage() {
     }
   }
 
-  const courses = [
-    {
-      id: 1,
-      name: "Mathematics IGCSE",
-      students: 45,
-      teacher: "Dr. Smith",
-      progress: 75,
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "English Literature",
-      students: 38,
-      teacher: "Ms. Johnson",
-      progress: 60,
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Physics Advanced",
-      students: 32,
-      teacher: "Prof. Williams",
-      progress: 85,
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "Chemistry Core",
-      students: 41,
-      teacher: "Dr. Brown",
-      progress: 50,
-      status: "Active",
-    },
-  ]
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(value)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -98,114 +148,321 @@ export default function DashboardPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-muted/30">
           {/* Hero Section with gradient */}
           <div className="bg-gradient-to-br from-[#624bff] to-[#8b7aff] px-4 py-12 md:px-6 lg:px-8">
             <div className="mx-auto max-w-7xl">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-white md:text-4xl">Dashboard Overview</h1>
-                  <p className="mt-2 text-white/90">Welcome back! Heres whats happening with your app today.</p>
+                  <p className="mt-2 text-white/90">Welcome back! Here's what's happening with your platform today.</p>
                 </div>
-                {/* <Button className="bg-white text-[#624bff] hover:bg-white/90">Create New Course</Button> */}
               </div>
 
-              {/* Stats Cards */}
-              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {/* KPI Stats Cards */}
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <StatsCard
-                  title="Total Courses"
-                  value={isLoading ? "..." : stats.totalCourses.toString()}
-                  subtitle={isLoading ? "Loading..." : `${stats.totalCourses} Active`}
-                  icon={BookOpen}
-                  iconColor="text-white"
+                  title="Revenue Paid"
+                  value={isLoading ? "..." : formatCurrency(kpis.revenuePaid || 0)}
+                  subtitle="Total paid revenue"
+                  icon={DollarSign}
+                  iconColor="text-green-600"
                 />
                 <StatsCard
-                  title="Total Students"
-                  value={isLoading ? "..." : stats.totalStudents.toString()}
-                  subtitle={isLoading ? "Loading..." : `${stats.totalStudents} Enrolled`}
-                  icon={Users}
-                  iconColor="text-white"
+                  title="Orders Paid"
+                  value={isLoading ? "..." : (kpis.ordersPaid || 0).toString()}
+                  subtitle="Completed orders"
+                  icon={ShoppingCart}
+                  iconColor="text-blue-600"
                 />
                 <StatsCard
-                  title="Teachers"
-                  value={isLoading ? "..." : stats.totalTeachers.toString()}
-                  subtitle={isLoading ? "Loading..." : `${stats.totalTeachers} Active`}
+                  title="New Enrollments"
+                  value={isLoading ? "..." : (kpis.newEnrollments || 0).toString()}
+                  subtitle="New enrollments"
                   icon={GraduationCap}
-                  iconColor="text-white"
+                  iconColor="text-purple-600"
+                />
+                <StatsCard
+                  title="New Users"
+                  value={isLoading ? "..." : (kpis.newUsers || 0).toString()}
+                  subtitle="New registered users"
+                  icon={Users}
+                  iconColor="text-orange-600"
+                />
+                <StatsCard
+                  title="Livestream Registrations"
+                  value={isLoading ? "..." : (kpis.livestreamRegistrations || 0).toString()}
+                  subtitle="Livestream signups"
+                  icon={Video}
+                  iconColor="text-red-600"
                 />
               </div>
             </div>
           </div>
 
-          {/* Active Courses Table */}
+          {/* Charts Section */}
           <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 lg:px-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">Active Courses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border text-left">
-                        <th className="pb-3 font-medium text-muted-foreground">Course Name</th>
-                        <th className="pb-3 font-medium text-muted-foreground">Students</th>
-                        <th className="pb-3 font-medium text-muted-foreground">Teacher</th>
-                        <th className="pb-3 font-medium text-muted-foreground">Status</th>
-                        <th className="pb-3 font-medium text-muted-foreground">Progress</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {courses.map((course) => (
-                        <tr key={course.id} className="border-b border-border last:border-0">
-                          <td className="py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                <BookOpen className="h-5 w-5 text-primary" />
-                              </div>
-                              <span className="font-medium">{course.name}</span>
-                            </div>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex items-center gap-2">
-                              <div className="flex -space-x-2">
-                                {[1, 2, 3].map((i) => (
-                                  <Avatar key={i} className="h-7 w-7 border-2 border-card">
-                                    <AvatarImage
-                                      src={`/diverse-students-studying.png?height=28&width=28&query=student${i}`}
-                                      alt={`Student ${i}`}
-                                    />
-                                    <AvatarFallback>S{i}</AvatarFallback>
-                                  </Avatar>
-                                ))}
-                              </div>
-                              <span className="text-sm text-muted-foreground">+{course.students - 3}</span>
-                            </div>
-                          </td>
-                          <td className="py-4 text-sm">{course.teacher}</td>
-                          <td className="py-4">
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
-                              {course.status}
-                            </Badge>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
-                                <div
-                                  className="h-full bg-primary transition-all"
-                                  style={{ width: `${course.progress}%` }}
-                                />
-                              </div>
-                              <span className="text-sm font-medium">{course.progress}%</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              
+              {/* Row 1: Revenue and Orders - Full width charts */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Revenue Chart - Area Chart */}
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                      Revenue Trend
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        Loading chart...
+                      </div>
+                    ) : revenueSeries.length === 0 ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        No data available
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={revenueSeries as any}>
+                          <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis 
+                            dataKey="date" 
+                            tickFormatter={formatDate}
+                            style={{ fontSize: '12px' }}
+                            stroke="#6b7280"
+                          />
+                          <YAxis 
+                            tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                            style={{ fontSize: '12px' }}
+                            stroke="#6b7280"
+                          />
+                          <Tooltip 
+                            formatter={(value: number) => formatCurrency(value)}
+                            labelFormatter={(label) => formatDate(label)}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="value" 
+                            stroke="#10b981" 
+                            strokeWidth={2}
+                            fill="url(#colorRevenue)"
+                            name="Revenue"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Orders Chart - Bar Chart */}
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <ShoppingCart className="h-5 w-5 text-blue-600" />
+                      Orders Over Time
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        Loading chart...
+                      </div>
+                    ) : ordersSeries.length === 0 ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        No data available
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={ordersSeries as any}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis 
+                            dataKey="date" 
+                            tickFormatter={formatDate}
+                            style={{ fontSize: '12px' }}
+                            stroke="#6b7280"
+                          />
+                          <YAxis style={{ fontSize: '12px' }} stroke="#6b7280" />
+                          <Tooltip 
+                            labelFormatter={(label) => formatDate(label)}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                          />
+                          <Bar dataKey="value" fill="#3b82f6" name="Orders" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Row 2: Enrollments and Users */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Enrollments Chart - Line Chart */}
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <GraduationCap className="h-5 w-5 text-purple-600" />
+                      Enrollments Growth
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        Loading chart...
+                      </div>
+                    ) : enrollmentsSeries.length === 0 ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        No data available
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <LineChart data={enrollmentsSeries as any}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis 
+                            dataKey="date" 
+                            tickFormatter={formatDate}
+                            style={{ fontSize: '12px' }}
+                            stroke="#6b7280"
+                          />
+                          <YAxis style={{ fontSize: '12px' }} stroke="#6b7280" />
+                          <Tooltip 
+                            labelFormatter={(label) => formatDate(label)}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="value" 
+                            stroke="#9333ea" 
+                            strokeWidth={3}
+                            name="Enrollments"
+                            dot={{ fill: '#9333ea', r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Users Chart - Area Chart */}
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="h-5 w-5 text-orange-600" />
+                      User Registration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        Loading chart...
+                      </div>
+                    ) : usersSeries.length === 0 ? (
+                      <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                        No data available
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={usersSeries as any}>
+                          <defs>
+                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis 
+                            dataKey="date" 
+                            tickFormatter={formatDate}
+                            style={{ fontSize: '12px' }}
+                            stroke="#6b7280"
+                          />
+                          <YAxis style={{ fontSize: '12px' }} stroke="#6b7280" />
+                          <Tooltip 
+                            labelFormatter={(label) => formatDate(label)}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="value" 
+                            stroke="#f97316" 
+                            strokeWidth={2}
+                            fill="url(#colorUsers)"
+                            name="Users"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Row 3: Livestream Revenue Chart - Full Width */}
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Video className="h-5 w-5 text-red-600" />
+                    Livestream Revenue Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="flex h-[320px] items-center justify-center text-muted-foreground">
+                      Loading chart...
+                    </div>
+                  ) : livestreamRevenueSeries.length === 0 ? (
+                    <div className="flex h-[320px] items-center justify-center text-muted-foreground">
+                      No data available
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={320}>
+                      <AreaChart data={livestreamRevenueSeries as any}>
+                        <defs>
+                          <linearGradient id="colorLivestream" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#dc2626" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={formatDate}
+                          style={{ fontSize: '12px' }}
+                          stroke="#6b7280"
+                        />
+                        <YAxis 
+                          tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                          style={{ fontSize: '12px' }}
+                          stroke="#6b7280"
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => formatCurrency(value)}
+                          labelFormatter={(label) => formatDate(label)}
+                          contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke="#dc2626" 
+                          strokeWidth={2}
+                          fill="url(#colorLivestream)"
+                          name="Livestream Revenue"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+            </div>
           </div>
         </main>
       </div>

@@ -13,16 +13,22 @@ interface StatsCardProps {
 
 export function StatsCard({ title, value, subtitle, icon: Icon, iconColor = "text-primary" }: StatsCardProps) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold">{value}</p>
-            {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+    <Card className="overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white/95 backdrop-blur">
+      <CardContent className="p-0">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className={`rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 p-3 shadow-sm ${iconColor}`}>
+              <Icon className="h-6 w-6" strokeWidth={2.5} />
+            </div>
           </div>
-          <div className={`rounded-lg bg-primary/10 p-3 ${iconColor}`}>
-            <Icon className="h-6 w-6" />
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{title}</p>
+            <p className="text-2xl font-bold text-gray-900 mb-2 break-words leading-tight">
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-sm text-gray-600 font-medium">{subtitle}</p>
+            )}
           </div>
         </div>
       </CardContent>

@@ -2,6 +2,7 @@
 
 import { PackageCreateDialog } from '@/components/admin/packages/package-create-dialog'
 import { PackageEditDialog } from '@/components/admin/packages/package-edit-dialog'
+import { PackageDetailDialog } from '@/components/admin/packages/package-detail-dialog'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { Button } from '@/components/ui/Button'
@@ -29,7 +30,9 @@ function PackagesPageContent() {
   })
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null)
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null)
   const [packages, setPackages] = useState<Package[]>([])
   const [filteredPackages, setFilteredPackages] = useState<Package[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -86,6 +89,11 @@ function PackagesPageContent() {
   const handleEdit = (pkg: Package) => {
     setSelectedPackage(pkg)
     setEditOpen(true)
+  }
+
+  const handleViewDetail = (pkg: Package) => {
+    setSelectedPackageId(pkg.id)
+    setDetailOpen(true)
   }
 
   const handleEditSuccess = () => {
@@ -175,6 +183,12 @@ function PackagesPageContent() {
           }, 3000)
         }}
         package={selectedPackage}
+      />
+
+      <PackageDetailDialog
+        packageId={selectedPackageId}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -301,6 +315,7 @@ function PackagesPageContent() {
                                   size="icon"
                                   className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
                                   title="View Details"
+                                  onClick={() => handleViewDetail(pkg)}
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>

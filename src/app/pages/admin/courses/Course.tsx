@@ -324,14 +324,7 @@ function CoursesPageContent() {
 
       {selectedCourse && (
         <CourseDetailDialog
-          course={{
-            id: selectedCourse.id.toString(),
-            name: selectedCourse.title,
-            students: selectedCourse.students || 0,
-            teacher: selectedCourse.teacher || 'N/A',
-            status: selectedCourse.status || 'Active',
-            progress: selectedCourse.progress || 0,
-          }}
+          course={selectedCourse}
           open={detailOpen}
           onOpenChange={setDetailOpen}
         />
