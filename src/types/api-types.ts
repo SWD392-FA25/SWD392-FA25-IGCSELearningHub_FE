@@ -195,14 +195,27 @@ export interface Quiz {
 }
 
 export interface Assignment {
-  id: string;
+  assignmentId: number;
+  courseId: number;
   title: string;
   description: string;
-  dueDate: string;
-  submittedAt?: string;
-  grade?: number;
-  feedback?: string;
-  status: "pending" | "submitted" | "graded" | "overdue";
+  createdAt: string;
+  submitted: boolean;
+}
+
+export interface AssignmentSubmission {
+  submissionId: number;
+  assignmentId: number;
+  accountId: number;
+  score: number | null;
+  submittedDate: string;
+  attachmentUrl: string;
+  textAnswer: string;
+}
+
+export interface SubmitAssignmentRequest {
+  attachmentUrl: string;
+  textAnswer: string;
 }
 
 // Order Types
@@ -325,34 +338,30 @@ export interface QuizForTake {
 }
 
 export interface QuizQuestion {
-  id: number;
-  text: string;
+  questionId: number;
+  orderIndex: number;
+  points: number;
+  stem: string;
   options: QuizOption[];
-  type: string;
-  order: number;
 }
 
 export interface QuizOption {
-  id: number;
+  optionId: number;
   text: string;
-  isCorrect?: boolean;
 }
 
 export interface QuizAttempt {
   attemptId: number;
   quizId: number;
-  studentId: number;
-  startedAt: string;
-  submittedAt?: string;
-  score?: number;
-  totalQuestions: number;
-  correctAnswers?: number;
-  status: string;
+  quizTitle: string;
+  score: number | null;
+  maxScore: number;
+  attemptDate: string;
 }
 
 export interface QuizAnswer {
   questionId: number;
-  selectedOptionIds: number[];
+  selectedOptionId: number | null;
 }
 
 export interface QuizSubmission {
@@ -362,18 +371,16 @@ export interface QuizSubmission {
 export interface QuizAttemptResult {
   attemptId: number;
   quizId: number;
-  title: string;
   score: number;
-  totalQuestions: number;
-  correctAnswers: number;
-  submittedAt: string;
-  answers: QuizAnswerResult[];
+  maxScore: number;
+  attemptDate: string;
+  details: QuizAnswerDetail[];
 }
 
-export interface QuizAnswerResult {
+export interface QuizAnswerDetail {
   questionId: number;
-  questionText: string;
-  selectedOptionIds: number[];
-  correctOptionIds: number[];
+  selectedOptionId: number | null;
   isCorrect: boolean;
+  awarded: number;
+  explanation: string;
 }

@@ -12,12 +12,17 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState<string>("all");
-  const [priceRange, setPriceRange] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("title");
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
+  const [priceMin, setPriceMin] = useState<string>("");
+  const [priceMax, setPriceMax] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("");
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -26,6 +31,49 @@ export default function CoursesPage() {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  useEffect(() => {
+    loadCourses();
+  }, [debouncedSearchTerm, selectedLevel, priceMin, priceMax, sortBy, pageNumber, pageSize]);
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await courseService.searchCourses({
+        q: debouncedSearchTerm,
+        level: selectedLevel,
+        priceMin: priceMin ? parseFloat(priceMin) : undefined,
+        priceMax: priceMax ? parseFloat(priceMax) : undefined,
+        sort: sortBy,
+        pageNumber,
+        pageSize,
+      });
+      
+      if (response.succeeded && response.data) {
+        setCourses(response.data);
+        setTotalPages(response.totalPages);
+        setTotalItems(response.totalCount);
+      } else {
+        setError(response.message || "Failed to load courses");
+        setCourses([]);
+      }
+    } catch (err) {
+      setError("Failed to load courses. Please try again later.");
+      console.error("Error loading courses:", err);
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    if (!price || price <= 0) return "Free";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(price);
+  };
 
   const highlightSearchTerm = (text: string, term: string): React.ReactNode => {
     if (!term.trim()) return text;
@@ -50,86 +98,95 @@ export default function CoursesPage() {
     );
   };
 
-  useEffect(() => {
-    loadCourses();
-  }, []);
-
-  const loadCourses = async () => {
-    try {
-      setLoading(true);
-      const response = await courseService.getAllCourses();
-      if (response.succeeded && response.data) {
-        setCourses(response.data);
-      } else {
-        setError(response.message || "Failed to load courses");
-      }
-    } catch (err) {
-      setError("Failed to load courses. Please try again later.");
-      console.error("Error loading courses:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatPrice = (price: number) => {
-    if (!price || price <= 0) return "Free";
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
-  };
-
-  const availableLevels = useMemo(() => {
-    const levels = [...new Set(courses.map((course) => course.level))];
-    return levels.filter(Boolean).sort();
-  }, [courses]);
-
-  const filteredAndSortedCourses = useMemo(() => {
-    let filtered = courses.filter((course) => {
-      const matchesSearch = course.title
-        .toLowerCase()
-        .includes(debouncedSearchTerm.toLowerCase());
-
-      const matchesLevel =
-        selectedLevel === "all" || course.level === selectedLevel;
-
-      let matchesPrice = true;
-      if (priceRange === "free") {
-        matchesPrice = !course.price || course.price <= 0;
-      } else if (priceRange === "under-1m") {
-        matchesPrice = course.price > 0 && course.price < 1000000;
-      } else if (priceRange === "1m-5m") {
-        matchesPrice = course.price >= 1000000 && course.price <= 5000000;
-      } else if (priceRange === "over-5m") {
-        matchesPrice = course.price > 5000000;
-      }
-
-      return matchesSearch && matchesLevel && matchesPrice;
-    });
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "title":
-          return a.title.localeCompare(b.title);
-        case "price-low":
-          return (a.price || 0) - (b.price || 0);
-        case "price-high":
-          return (b.price || 0) - (a.price || 0);
-        case "level":
-          return a.level.localeCompare(b.level);
-        default:
-          return 0;
-      }
-    });
-
-    return filtered;
-  }, [courses, debouncedSearchTerm, selectedLevel, priceRange, sortBy]);
+  const availableLevels = ["AS Level", "A Level", "IGCSE"];
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedLevel("all");
-    setPriceRange("all");
-    setSortBy("title");
+    setSelectedLevel("");
+    setPriceMin("");
+    setPriceMax("");
+    setSortBy("");
+    setPageNumber(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const renderPagination = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, pageNumber - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-4 py-2 rounded-md ${
+            i === pageNumber
+              ? "bg-primary text-primary-foreground"
+              : "bg-background border border-border hover:bg-muted"
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-8">
+        <button
+          onClick={() => handlePageChange(pageNumber - 1)}
+          disabled={pageNumber === 1}
+          className="px-4 py-2 rounded-md bg-background border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        
+        {startPage > 1 && (
+          <>
+            <button
+              onClick={() => handlePageChange(1)}
+              className="px-4 py-2 rounded-md bg-background border border-border hover:bg-muted"
+            >
+              1
+            </button>
+            {startPage > 2 && <span className="px-2">...</span>}
+          </>
+        )}
+        
+        {pages}
+        
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span className="px-2">...</span>}
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              className="px-4 py-2 rounded-md bg-background border border-border hover:bg-muted"
+            >
+              {totalPages}
+            </button>
+          </>
+        )}
+        
+        <button
+          onClick={() => handlePageChange(pageNumber + 1)}
+          disabled={pageNumber === totalPages}
+          className="px-4 py-2 rounded-md bg-background border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    );
   };
 
   if (loading) {
@@ -226,7 +283,7 @@ export default function CoursesPage() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Level
@@ -236,7 +293,7 @@ export default function CoursesPage() {
                     onChange={(e) => setSelectedLevel(e.target.value)}
                     className="w-full h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    <option value="all">All Levels</option>
+                    <option value="">All Levels</option>
                     {availableLevels.map((level) => (
                       <option key={level} value={level}>
                         {level}
@@ -247,19 +304,28 @@ export default function CoursesPage() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Price Range
+                    Min Price (VND)
                   </label>
-                  <select
-                    value={priceRange}
-                    onChange={(e) => setPriceRange(e.target.value)}
-                    className="w-full h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="all">All Prices</option>
-                    <option value="free">Free</option>
-                    <option value="under-1m">Under 1,000,000 VND</option>
-                    <option value="1m-5m">1,000,000 - 5,000,000 VND</option>
-                    <option value="over-5m">Over 5,000,000 VND</option>
-                  </select>
+                  <Input
+                    type="number"
+                    placeholder="Min price"
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Max Price (VND)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="Max price"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    min="0"
+                  />
                 </div>
 
                 <div>
@@ -271,9 +337,10 @@ export default function CoursesPage() {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="w-full h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
+                    <option value="">Default</option>
                     <option value="title">Title (A-Z)</option>
-                    <option value="price-low">Price (Low to High)</option>
-                    <option value="price-high">Price (High to Low)</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="price-desc">Price (High to Low)</option>
                     <option value="level">Level</option>
                   </select>
                 </div>
@@ -281,15 +348,15 @@ export default function CoursesPage() {
 
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
-                  Showing {filteredAndSortedCourses.length} of {courses.length}{" "}
-                  courses
+                  Showing {courses.length} of {totalItems} courses (Page {pageNumber} of {totalPages})
                 </span>
                 {(debouncedSearchTerm ||
-                  selectedLevel !== "all" ||
-                  priceRange !== "all" ||
-                  sortBy !== "title") && (
+                  selectedLevel ||
+                  priceMin ||
+                  priceMax ||
+                  sortBy) && (
                   <span className="text-primary font-medium">
-                    {debouncedSearchTerm ? "Search active" : "Filters applied"}
+                    Filters applied
                   </span>
                 )}
               </div>
@@ -299,13 +366,7 @@ export default function CoursesPage() {
 
         <section className="w-full py-20 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {courses.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground text-lg">
-                  No courses available at the moment.
-                </p>
-              </div>
-            ) : filteredAndSortedCourses.length === 0 ? (
+            {courses.length === 0 && !loading ? (
               <div className="text-center py-12">
                 <div className="max-w-md mx-auto">
                   <div className="text-6xl mb-4">🔍</div>
@@ -330,59 +391,63 @@ export default function CoursesPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredAndSortedCourses.map((course) => (
-                  <Link
-                    key={course.id}
-                    href={`/courses/${course.id}`}
-                    className="group p-6 border border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer bg-card relative"
-                  >
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      {highlightSearchTerm(course.title, debouncedSearchTerm)}
-                    </h3>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
-                      {course.shortDescription &&
-                        highlightSearchTerm(
-                          course.shortDescription,
-                          debouncedSearchTerm
-                        )}
-                    </p>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {courses.map((course) => (
+                    <Link
+                      key={course.id}
+                      href={`/courses/${course.id}`}
+                      className="group p-6 border border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer bg-card relative"
+                    >
+                      <h3 className="text-xl font-semibold text-foreground mb-2">
+                        {highlightSearchTerm(course.title, debouncedSearchTerm)}
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                        {course.shortDescription &&
+                          highlightSearchTerm(
+                            course.shortDescription,
+                            debouncedSearchTerm
+                          )}
+                      </p>
 
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Level</span>
-                        <span className="font-medium text-foreground">
-                          {course.level}
-                        </span>
+                      <div className="space-y-3 mb-6">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Level</span>
+                          <span className="font-medium text-foreground">
+                            {course.level}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Quizzes</span>
+                          <span className="font-medium text-foreground">
+                            {course.totalQuizzes}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Assignments
+                          </span>
+                          <span className="font-medium text-foreground">
+                            {course.totalAssignments}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Price</span>
+                          <span className="font-medium text-primary">
+                            {formatPrice(course.price)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Quizzes</span>
-                        <span className="font-medium text-foreground">
-                          {course.totalQuizzes}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Assignments
-                        </span>
-                        <span className="font-medium text-foreground">
-                          {course.totalAssignments}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Price</span>
-                        <span className="font-medium text-primary">
-                          {formatPrice(course.price)}
-                        </span>
-                      </div>
-                    </div>
 
-                    <button className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity">
-                      View Details
-                    </button>
-                  </Link>
-                ))}
-              </div>
+                      <button className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity">
+                        View Details
+                      </button>
+                    </Link>
+                  ))}
+                </div>
+                
+                {totalPages > 1 && renderPagination()}
+              </>
             )}
           </div>
         </section>

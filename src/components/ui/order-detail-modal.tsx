@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Descriptions, Table, Tag, Button, Popconfirm, message, Card, Alert, Spin } from 'antd'
+import { Modal, Descriptions, Table, Tag, Button, Popconfirm, Card, Alert, Spin } from 'antd'
+import toast from 'react-hot-toast'
 import { EyeOutlined, CreditCardOutlined, LoadingOutlined } from '@ant-design/icons'
 import { orderService } from '@/services/order-service'
 import { OrderDetail, OrderStatus, CheckoutRequest } from '@/types/api-types'
@@ -91,15 +92,15 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       const response = await orderService.checkout(String(orderId), checkoutRequest)
       
       if (response.succeeded && response.data?.checkoutUrl) {
-        message.success('Redirecting to payment page...')
+        toast.success('Redirecting to payment page...')
         
         window.location.href = response.data.checkoutUrl
       } else {
-        message.error(response.message || 'Failed to generate payment link')
+        toast.error(response.message || 'Failed to generate payment link')
       }
     } catch (err) {
       console.error('Payment error:', err)
-      message.error('Failed to process payment. Please try again later.')
+      toast.error('Failed to process payment. Please try again later.')
     } finally {
       setProcessingPayment(false)
     }

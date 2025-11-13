@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Card, List, Button, Tag, Spin, Alert, message, Pagination } from 'antd'
+import { Modal, Card, List, Button, Tag, Spin, Alert, Pagination } from 'antd'
+import toast from 'react-hot-toast'
 import { 
   QuestionCircleOutlined,
   PlayCircleOutlined,
@@ -52,8 +53,8 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       const response = await quizService.getQuizzesByCourse(courseId, currentPage, pageSize)
       if (response.succeeded && response.data) {
         setQuizzes(response.data)
-        setTotalCount(response.totalCount)
-        setTotalPages(response.totalPages)
+        setTotalCount(response.data.length)
+        setTotalPages(Math.ceil(response.data.length / pageSize))
       } else {
         throw new Error(response.message || 'Failed to fetch quizzes')
       }
@@ -78,7 +79,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       }
     } catch (err) {
       console.error('Error fetching quiz details:', err)
-      message.error('Failed to load quiz details')
+      toast.error('Failed to load quiz details')
     } finally {
       setQuizDetailLoading(false)
     }
@@ -89,14 +90,14 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     try {
       const response = await quizService.createQuizAttempt(quizId)
       if (response.succeeded && response.data) {
-        setAttemptId(response.data.attemptId)
-        message.success(`Quiz attempt created! Attempt ID: ${response.data.attemptId}`)
+        setAttemptId(response.data)
+        toast.success(`Quiz attempt created!`)
       } else {
         throw new Error(response.message || 'Failed to create quiz attempt')
       }
     } catch (err) {
       console.error('Error creating quiz attempt:', err)
-      message.error('Failed to start quiz')
+      toast.error('Failed to start quiz')
     } finally {
       setCreatingAttempt(false)
     }

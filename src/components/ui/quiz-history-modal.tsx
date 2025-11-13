@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Table, Tag, Button, Spin, Alert, message, Pagination } from 'antd'
+import { Modal, Table, Tag, Button, Spin, Alert, Pagination } from 'antd'
+import toast from 'react-hot-toast'
 import { 
   HistoryOutlined,
   EyeOutlined,
@@ -71,7 +72,7 @@ export const QuizHistoryModal: React.FC<QuizHistoryModalProps> = ({
       }
     } catch (err) {
       console.error('Error fetching attempt result:', err)
-      message.error('Failed to load attempt result')
+      toast.error('Failed to load attempt result')
     } finally {
       setResultLoading(false)
     }
@@ -149,7 +150,7 @@ export const QuizHistoryModal: React.FC<QuizHistoryModalProps> = ({
           icon={<EyeOutlined />}
           onClick={() => handleViewResult(record.quizId, record.attemptId)}
           loading={resultLoading}
-          disabled={!record.submittedAt}
+          disabled={record.score === null}
         >
           View Result
         </Button>
@@ -238,7 +239,7 @@ export const QuizHistoryModal: React.FC<QuizHistoryModalProps> = ({
       </Modal>
 
       <Modal
-        title={`Quiz Result - ${selectedAttemptResult?.title || 'Loading...'}`}
+        title="Quiz Result"
         open={resultModalVisible}
         onCancel={() => {
           setResultModalVisible(false)
@@ -257,30 +258,24 @@ export const QuizHistoryModal: React.FC<QuizHistoryModalProps> = ({
         {selectedAttemptResult && (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-blue-600">
-                    {selectedAttemptResult.score}%
+                    {selectedAttemptResult.score}/{selectedAttemptResult.maxScore}
                   </div>
-                  <div className="text-sm text-muted-foreground">Final Score</div>
+                  <div className="text-sm text-muted-foreground">Score</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-600">
-                    {selectedAttemptResult.correctAnswers}
+                    {Math.round((selectedAttemptResult.score / selectedAttemptResult.maxScore) * 100)}%
                   </div>
-                  <div className="text-sm text-muted-foreground">Correct</div>
+                  <div className="text-sm text-muted-foreground">Percentage</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-gray-600">
-                    {selectedAttemptResult.totalQuestions}
+                    {selectedAttemptResult.details.length}
                   </div>
-                  <div className="text-sm text-muted-foreground">Total</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {selectedAttemptResult.totalQuestions - selectedAttemptResult.correctAnswers}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Incorrect</div>
+                  <div className="text-sm text-muted-foreground">Questions</div>
                 </div>
               </div>
             </div>
@@ -297,36 +292,44 @@ export const QuizHistoryModal: React.FC<QuizHistoryModalProps> = ({
                   <span className="ml-2 font-medium">{selectedAttemptResult.quizId}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Submitted:</span>
-                  <span className="ml-2 font-medium">{formatDate(selectedAttemptResult.submittedAt)}</span>
+                  <span className="text-muted-foreground">Attempt Date:</span>
+                  <span className="ml-2 font-medium">{formatDate(selectedAttemptResult.attemptDate)}</span>
                 </div>
               </div>
             </div>
 
-            {selectedAttemptResult.answers && selectedAttemptResult.answers.length > 0 && (
+            {selectedAttemptResult.details && selectedAttemptResult.details.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium mb-4">Answer Review</h3>
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {selectedAttemptResult.answers.map((answer, index) => (
+                  {selectedAttemptResult.details.map((detail, index) => (
                     <div 
-                      key={answer.questionId}
+                      key={detail.questionId}
                       className={`p-4 rounded-lg border ${
-                        answer.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                        detail.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
                       }`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <span className="font-medium">Question {index + 1}</span>
-                        {answer.isCorrect ? (
+                        {detail.isCorrect ? (
                           <CheckCircleOutlined className="text-green-500" />
                         ) : (
                           <ClockCircleOutlined className="text-red-500" />
                         )}
                       </div>
-                      <div className="text-sm mb-2">{answer.questionText}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Selected: {answer.selectedOptionIds.join(', ')} | 
-                        Correct: {answer.correctOptionIds.join(', ')}
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          Question ID: {detail.questionId}
+                        </div>
+                        <div className="text-sm font-medium">
+                          Points: {detail.awarded}
+                        </div>
                       </div>
+                      {detail.explanation && (
+                        <div className="mt-2 text-xs text-muted-foreground italic">
+                          {detail.explanation}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

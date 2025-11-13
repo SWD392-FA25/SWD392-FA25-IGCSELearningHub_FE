@@ -127,6 +127,17 @@ export function Header() {
                       </Link>
                       
                       <Link
+                        href="/my-learning/quizzes"
+                        className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        My Quizzes
+                      </Link>
+                      
+                      {/* <Link
                         href="/assignments-quizzes"
                         className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                         onClick={() => setIsUserMenuOpen(false)}
@@ -135,7 +146,7 @@ export function Header() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
                         Assignments & Quizzes
-                      </Link>
+                      </Link> */}
                       
                       <Link
                         href="/orders"
@@ -279,6 +290,17 @@ export function Header() {
                   </Link>
                   
                   <Link
+                    href="/my-learning/quizzes"
+                    className="flex items-center px-4 py-2 text-foreground hover:bg-muted rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                    My Quizzes
+                  </Link>
+                  
+                  {/* <Link
                     href="/assignments-quizzes"
                     className="flex items-center px-4 py-2 text-foreground hover:bg-muted rounded-lg transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -287,7 +309,7 @@ export function Header() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
                     Assignments & Quizzes
-                  </Link>
+                  </Link> */}
                   
                   <Link
                     href="/orders"

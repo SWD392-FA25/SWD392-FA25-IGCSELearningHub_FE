@@ -1,5 +1,15 @@
 import { apiClient } from './api-client'
-import { ApiResponse, CourseSummary, CourseDetail } from '@/types/api-types'
+import { ApiResponse, PaginatedApiResponse, CourseSummary, CourseDetail } from '@/types/api-types'
+
+interface SearchCoursesParams {
+  q?: string;
+  level?: string;
+  priceMin?: number;
+  priceMax?: number;
+  sort?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}
 
 class CourseService {
   // GET /api/v1/courses - Get all public courses
@@ -12,15 +22,20 @@ class CourseService {
     return apiClient.get<ApiResponse<CourseDetail>>(`/courses/${courseId}`)
   }
 
-  // Search courses (if available)
-  async searchCourses(query: string, category?: string, level?: string): Promise<ApiResponse<CourseSummary[]>> {
-    const params = new URLSearchParams()
-    if (query) params.append('q', query)
-    if (category) params.append('category', category)
-    if (level) params.append('level', level)
+  // Search courses with filters and pagination
+  async searchCourses(params: SearchCoursesParams): Promise<PaginatedApiResponse<CourseSummary[]>> {
+    const queryParams = new URLSearchParams()
     
-    const queryString = params.toString()
-    return apiClient.get<ApiResponse<CourseSummary[]>>(`/courses${queryString ? `?${queryString}` : ''}`)
+    if (params.q) queryParams.append('q', params.q)
+    if (params.level) queryParams.append('level', params.level)
+    if (params.priceMin !== undefined) queryParams.append('priceMin', params.priceMin.toString())
+    if (params.priceMax !== undefined) queryParams.append('priceMax', params.priceMax.toString())
+    if (params.sort) queryParams.append('sort', params.sort)
+    if (params.pageNumber) queryParams.append('pageNumber', params.pageNumber.toString())
+    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString())
+    
+    const queryString = queryParams.toString()
+    return apiClient.get<PaginatedApiResponse<CourseSummary[]>>(`/courses${queryString ? `?${queryString}` : ''}`)
   }
 }
 

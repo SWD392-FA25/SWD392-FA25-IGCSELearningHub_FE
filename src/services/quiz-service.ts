@@ -12,31 +12,39 @@ import {
 class QuizService {
   async getQuizzesByCourse(
     courseId: number, 
-    pageNumber: number = 1, 
-    pageSize: number = 10
-  ): Promise<PaginatedApiResponse<QuizSummary[]>> {
+    pageNumber?: number, 
+    pageSize?: number
+  ): Promise<ApiResponse<QuizSummary[]>> {
     const params = new URLSearchParams({
-      courseId: courseId.toString(),
-      pageNumber: pageNumber.toString(),
-      pageSize: pageSize.toString()
+      courseId: courseId.toString()
     })
-    return apiClient.get<PaginatedApiResponse<QuizSummary[]>>(`/quizzes?${params.toString()}`)
+    if (pageNumber) params.append('pageNumber', pageNumber.toString())
+    if (pageSize) params.append('pageSize', pageSize.toString())
+    return apiClient.get<ApiResponse<QuizSummary[]>>(`/quizzes?${params.toString()}`)
   }
 
-  async getQuizForTake(quizId: number): Promise<ApiResponse<QuizForTake>> {
-    return apiClient.get<ApiResponse<QuizForTake>>(`/student/quizzes/${quizId}/for-take`)
+  async getQuizForTake(
+    quizId: number, 
+    shuffleQuestions?: boolean, 
+    shuffleOptions?: boolean
+  ): Promise<ApiResponse<QuizForTake>> {
+    const params = new URLSearchParams()
+    if (shuffleQuestions !== undefined) params.append('shuffleQuestions', shuffleQuestions.toString())
+    if (shuffleOptions !== undefined) params.append('shuffleOptions', shuffleOptions.toString())
+    const queryString = params.toString()
+    return apiClient.get<ApiResponse<QuizForTake>>(`/student/quizzes/${quizId}/for-take${queryString ? `?${queryString}` : ''}`)
   }
 
-  async createQuizAttempt(quizId: number): Promise<ApiResponse<{ attemptId: number }>> {
-    return apiClient.post<ApiResponse<{ attemptId: number }>>(`/student/quizzes/${quizId}/attempts`)
+  async createQuizAttempt(quizId: number): Promise<ApiResponse<number>> {
+    return apiClient.post<ApiResponse<number>>(`/student/quizzes/${quizId}/attempts`)
   }
 
   async submitQuizAttempt(
     quizId: number, 
     attemptId: number, 
     submission: QuizSubmission
-  ): Promise<ApiResponse<any>> {
-    return apiClient.post<ApiResponse<any>>(`/student/quizzes/${quizId}/attempts/${attemptId}/submit`, submission)
+  ): Promise<ApiResponse<QuizAttemptResult>> {
+    return apiClient.post<ApiResponse<QuizAttemptResult>>(`/student/quizzes/${quizId}/attempts/${attemptId}/submit`, submission)
   }
 
   async getQuizAttemptResult(

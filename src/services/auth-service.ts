@@ -1,12 +1,18 @@
 // Authentication service
 import { ApiResponse, LoginData, AccountDetail } from '@/types/api-types'
 import { accountService } from './account-service'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '@/lib/firebase'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 export interface LoginRequest {
   username: string
   password: string
+}
+
+export interface GoogleLoginRequest {
+  firebaseIdToken: string
 }
 
 export interface RegisterRequest {
@@ -114,6 +120,54 @@ class AuthService {
         data: null,
         details: null,
         errors: ["Network error or server is down"]
+      }
+    }
+  }
+
+  async loginWithGoogle(): Promise<AuthResponse> {
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      const firebaseIdToken = await result.user.getIdToken()
+
+      const response = await fetch(`${API_BASE_URL}/Authentication/google-login`, {
+        method: 'POST',
+        headers: {
+          'accept': '*/*',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firebaseIdToken
+        }),
+      })
+
+      const data: ApiResponse<LoginData> = await response.json()
+
+      if (data.succeeded && data.data?.accessToken && data.data?.id) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', data.data.accessToken)
+          localStorage.setItem('userId', data.data.id.toString())
+          
+          const accountResponse = await accountService.getAccountById(data.data.id, data.data.accessToken)
+          
+          if (accountResponse.succeeded && accountResponse.data) {
+            localStorage.setItem('user', JSON.stringify(accountResponse.data))
+          } else {
+            localStorage.setItem('user', JSON.stringify(data.data))
+          }
+        }
+      }
+
+      return data
+    } catch (error) {
+      console.error('Google login error:', error)
+      return {
+        succeeded: false,
+        status: "error",
+        statusCode: 500,
+        message: "Failed to login with Google",
+        data: null,
+        details: null,
+        errors: [(error as Error).message || "Google authentication failed"]
       }
     }
   }

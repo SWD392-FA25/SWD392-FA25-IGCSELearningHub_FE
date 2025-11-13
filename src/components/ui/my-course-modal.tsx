@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Descriptions, Card, List, Button, Tag, Progress, Spin, Alert, Collapse, message, Slider, InputNumber } from 'antd'
+import { Modal, Descriptions, Card, List, Button, Tag, Progress, Spin, Alert, Collapse, Slider, InputNumber, Tabs } from 'antd'
+import toast from 'react-hot-toast'
 import { 
   BookOutlined, 
   PlayCircleOutlined, 
@@ -9,13 +10,17 @@ import {
   PlaySquareOutlined,
   DownloadOutlined,
   EyeOutlined,
-  EditOutlined
+  EditOutlined,
+  TrophyOutlined
 } from '@ant-design/icons'
 import { myCourseService } from '@/services/my-course-service'
 import { MyCourseDetail, Unit, CourseLesson, LessonDetail } from '@/types/api-types'
 import { formatDate } from '@/lib/formatDate'
+import { QuizContainer } from '@/components/quiz/quiz-container'
+import { AssignmentContainer } from '@/components/assignment/assignment-container'
 
 const { Panel } = Collapse
+const { TabPane } = Tabs
 
 interface MyCourseModalProps {
   courseId: number | null
@@ -90,13 +95,13 @@ export const MyCourseModal: React.FC<MyCourseModalProps> = ({
       const response = await myCourseService.updateCourseProgress(courseId, newProgress)
       if (response.succeeded) {
         setCourseProgress(newProgress)
-        message.success('Progress updated successfully!')
+        toast.success('Progress updated successfully!')
       } else {
         throw new Error(response.message || 'Failed to update progress')
       }
     } catch (err) {
       console.error('Error updating progress:', err)
-      message.error('Failed to update progress')
+      toast.error('Failed to update progress')
     } finally {
       setUpdatingProgress(false)
     }
@@ -116,7 +121,7 @@ export const MyCourseModal: React.FC<MyCourseModalProps> = ({
       }
     } catch (err) {
       console.error('Error fetching lesson details:', err)
-      message.error('Failed to load lesson details')
+      toast.error('Failed to load lesson details')
     } finally {
       setLessonLoading(false)
     }
@@ -129,7 +134,7 @@ export const MyCourseModal: React.FC<MyCourseModalProps> = ({
     try {
       const response = await myCourseService.markLessonCompleted(courseId, lessonId)
       if (response.succeeded) {
-        message.success('Lesson marked as completed!')
+        toast.success('Lesson marked as completed!')
         
         if (courseDetail) {
           const updatedCourse = { ...courseDetail }
@@ -151,7 +156,7 @@ export const MyCourseModal: React.FC<MyCourseModalProps> = ({
       }
     } catch (err) {
       console.error('Error marking lesson as completed:', err)
-      message.error('Failed to mark lesson as completed')
+      toast.error('Failed to mark lesson as completed')
     } finally {
       setCompletingLessons(prev => {
         const newSet = new Set(prev)
@@ -308,88 +313,128 @@ export const MyCourseModal: React.FC<MyCourseModalProps> = ({
                 </div>
               </Card>
 
-              {courseDetail.units && courseDetail.units.length > 0 && (
-                <Card title="Course Content" size="small">
-                  <Collapse accordion>
-                    {courseDetail.units.map((unit) => (
-                      <Panel
-                        key={unit.id}
-                        header={
-                          <div className="flex items-center justify-between w-full mr-4">
-                            <div>
-                              <strong>{unit.title}</strong>
-                              {unit.description && (
-                                <div className="text-sm text-muted-foreground">{unit.description}</div>
-                              )}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {unit.lessons.filter(l => l.completed).length}/{unit.lessons.length} completed
-                            </div>
-                          </div>
-                        }
-                      >
-                        <List
-                          dataSource={unit.lessons}
-                          renderItem={(lesson) => (
-                            <List.Item
-                              actions={[
-                                <Button
-                                  key="view"
-                                  type="text"
-                                  size="small"
-                                  icon={<EyeOutlined />}
-                                  onClick={() => handleViewLesson(lesson.id)}
-                                  loading={lessonLoading}
+              <Card size="small">
+                <Tabs defaultActiveKey="lessons">
+                  <TabPane 
+                    tab={
+                      <span>
+                        <BookOutlined />
+                        Lessons
+                      </span>
+                    } 
+                    key="lessons"
+                  >
+                    {courseDetail.units && courseDetail.units.length > 0 ? (
+                      <Collapse accordion>
+                        {courseDetail.units.map((unit) => (
+                          <Panel
+                            key={unit.id}
+                            header={
+                              <div className="flex items-center justify-between w-full mr-4">
+                                <div>
+                                  <strong>{unit.title}</strong>
+                                  {unit.description && (
+                                    <div className="text-sm text-muted-foreground">{unit.description}</div>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {unit.lessons.filter(l => l.completed).length}/{unit.lessons.length} completed
+                                </div>
+                              </div>
+                            }
+                          >
+                            <List
+                              dataSource={unit.lessons}
+                              renderItem={(lesson) => (
+                                <List.Item
+                                  actions={[
+                                    <Button
+                                      key="view"
+                                      type="text"
+                                      size="small"
+                                      icon={<EyeOutlined />}
+                                      onClick={() => handleViewLesson(lesson.id)}
+                                      loading={lessonLoading}
+                                    >
+                                      View
+                                    </Button>,
+                                    !lesson.completed && (
+                                      <Button
+                                        key="complete"
+                                        type="text"
+                                        size="small"
+                                        icon={<CheckCircleOutlined />}
+                                        onClick={() => handleMarkComplete(lesson.id)}
+                                        loading={completingLessons.has(lesson.id)}
+                                      >
+                                        Mark Complete
+                                      </Button>
+                                    )
+                                  ].filter(Boolean)}
                                 >
-                                  View
-                                </Button>,
-                                !lesson.completed && (
-                                  <Button
-                                    key="complete"
-                                    type="text"
-                                    size="small"
-                                    icon={<CheckCircleOutlined />}
-                                    onClick={() => handleMarkComplete(lesson.id)}
-                                    loading={completingLessons.has(lesson.id)}
-                                  >
-                                    Mark Complete
-                                  </Button>
-                                )
-                              ].filter(Boolean)}
-                            >
-                              <List.Item.Meta
-                                avatar={
-                                  <div className="flex items-center space-x-2">
-                                    {lesson.completed ? (
-                                      <CheckCircleOutlined className="text-green-500" />
-                                    ) : (
-                                      <ClockCircleOutlined className="text-gray-400" />
-                                    )}
-                                    {lesson.videoUrl && <PlaySquareOutlined className="text-blue-500" />}
-                                    {lesson.attachmentUrl && <FileTextOutlined className="text-orange-500" />}
-                                  </div>
-                                }
-                                title={
-                                  <div className="flex items-center space-x-2">
-                                    <span>{lesson.title}</span>
-                                    {lesson.isFreePreview && (
-                                      <Tag color="blue">Free Preview</Tag>
-                                    )}
-                                    {lesson.completed && (
-                                      <Tag color="green">Completed</Tag>
-                                    )}
-                                  </div>
-                                }
-                                description={lesson.description}
-                              />
-                            </List.Item>
-                          )}
-                        />
-                      </Panel>
-                    ))}
-                  </Collapse>
-                </Card>
-              )}
+                                  <List.Item.Meta
+                                    avatar={
+                                      <div className="flex items-center space-x-2">
+                                        {lesson.completed ? (
+                                          <CheckCircleOutlined className="text-green-500" />
+                                        ) : (
+                                          <ClockCircleOutlined className="text-gray-400" />
+                                        )}
+                                        {lesson.videoUrl && <PlaySquareOutlined className="text-blue-500" />}
+                                        {lesson.attachmentUrl && <FileTextOutlined className="text-orange-500" />}
+                                      </div>
+                                    }
+                                    title={
+                                      <div className="flex items-center space-x-2">
+                                        <span>{lesson.title}</span>
+                                        {lesson.isFreePreview && (
+                                          <Tag color="blue">Free Preview</Tag>
+                                        )}
+                                        {lesson.completed && (
+                                          <Tag color="green">Completed</Tag>
+                                        )}
+                                      </div>
+                                    }
+                                    description={lesson.description}
+                                  />
+                                </List.Item>
+                              )}
+                            />
+                          </Panel>
+                        ))}
+                      </Collapse>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No lessons available
+                      </div>
+                    )}
+                  </TabPane>
+
+                  <TabPane 
+                    tab={
+                      <span>
+                        <TrophyOutlined />
+                        Quizzes ({courseDetail.totalQuizzes})
+                      </span>
+                    } 
+                    key="quizzes"
+                  >
+                    <QuizContainer courseId={courseDetail.id} />
+                  </TabPane>
+
+                  <TabPane 
+                    tab={
+                      <span>
+                        <EditOutlined />
+                        Assignments ({courseDetail.totalAssignments || 0})
+                      </span>
+                    } 
+                    key="assignments"
+                  >
+                    <AssignmentContainer courseId={courseDetail.id} />
+                  </TabPane>
+                </Tabs>
+              </Card>
             </div>
           ) : null}
         </Spin>
