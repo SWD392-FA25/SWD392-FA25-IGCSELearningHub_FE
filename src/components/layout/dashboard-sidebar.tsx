@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn'
 import {
   Baby,
   BookOpen,
+  FileQuestion,
   FileText,
   GraduationCap,
   Package,
@@ -114,6 +115,19 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           >
             <FileText className="h-5 w-5 flex-shrink-0" />
             {isOpen && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Assignment Management</span>}
+          </Link>
+
+          <Link
+            href="/pages/admin/quizzes"
+            className={cn(
+              "flex items-center gap-3 rounded-lg py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors overflow-hidden",
+              isOpen ? "px-3" : "px-2 justify-center",
+              pathname?.startsWith("/pages/admin/quizzes") && "bg-sidebar-accent text-primary font-semibold"
+            )}
+            title={!isOpen ? "Quiz Management" : undefined}
+          >
+            <FileQuestion className="h-5 w-5 flex-shrink-0" />
+            {isOpen && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Quiz Management</span>}
           </Link>
 
           <Link

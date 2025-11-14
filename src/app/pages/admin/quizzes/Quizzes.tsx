@@ -1,32 +1,30 @@
 'use client'
 
-import { AssignmentCreateDialog } from '@/components/admin/assignments/assignment-create-dialog'
-import { AssignmentEditDialog } from '@/components/admin/assignments/assignment-edit-dialog'
-import { AssignmentSubmissionDialog } from '@/components/admin/assignments/assignment-submission-dialog'
+import { QuizCreateDialog } from '@/components/admin/quizzes/quiz-create-dialog'
+import { QuizEditDialog } from '@/components/admin/quizzes/quiz-edit-dialog'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchProvider, useSearch } from '@/context/SearchContext'
 import {
-  Assignment,
-  deleteAssignment,
-  getAssignments,
-} from '@/services/assignmentService'
-import { getCourseById, Course } from '@/services/courseService'
+  Quiz,
+  deleteQuiz,
+  getQuizzes,
+} from '@/services/quizService'
+import { getCourseById } from '@/services/courseService'
 import {
   BookOpen,
   Calendar,
-  Eye,
-  FileText,
+  FileQuestion,
+  Hash,
   Pencil,
   Plus,
   Trash2,
-  Users,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-function AssignmentsPageContent() {
+function QuizzesPageContent() {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 768
@@ -35,18 +33,9 @@ function AssignmentsPageContent() {
   })
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
-  const [submissionOpen, setSubmissionOpen] = useState(false)
-  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(
-    null
-  )
-  const [viewingAssignment, setViewingAssignment] = useState<{
-    id: number
-    title: string
-  } | null>(null)
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [filteredAssignments, setFilteredAssignments] = useState<Assignment[]>(
-    []
-  )
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null)
+  const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [courseMap, setCourseMap] = useState<Map<number, string>>(new Map())
@@ -55,53 +44,50 @@ function AssignmentsPageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
-  const pageSize = 10 // 10 items per page
+  const pageSize = 10
 
   // Use search from header context
   const { searchQuery } = useSearch()
 
-  // Fetch assignments from API
+  // Fetch quizzes from API
   useEffect(() => {
-    fetchAssignments()
-  }, [currentPage]) // Refetch when page changes
+    fetchQuizzes()
+  }, [currentPage])
 
-  // Filter assignments based on search query
+  // Filter quizzes based on search query
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredAssignments(assignments)
+      setFilteredQuizzes(quizzes)
     } else {
       const query = searchQuery.toLowerCase()
-      const filtered = assignments.filter(
-        (assignment) =>
-          assignment.title.toLowerCase().includes(query) ||
-          assignment.id.toString().includes(query) ||
-          assignment.courseId.toString().includes(query)
+      const filtered = quizzes.filter(
+        (quiz) =>
+          quiz.title.toLowerCase().includes(query) ||
+          quiz.id.toString().includes(query) ||
+          quiz.courseId.toString().includes(query)
       )
-      setFilteredAssignments(filtered)
+      setFilteredQuizzes(filtered)
     }
-  }, [searchQuery, assignments])
+  }, [searchQuery, quizzes])
 
-  const fetchAssignments = async () => {
+  const fetchQuizzes = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await getAssignments(currentPage, pageSize)
-      setAssignments(response.data)
-      setFilteredAssignments(response.data)
+      const response = await getQuizzes(currentPage, pageSize)
+      setQuizzes(response.data)
+      setFilteredQuizzes(response.data)
       setTotalPages(response.totalPages)
       setTotalCount(response.totalCount)
 
       // Fetch course titles for all unique courseIds
-      const uniqueCourseIds = [...new Set(response.data.map(a => a.courseId))]
+      const uniqueCourseIds = [...new Set(response.data.map(q => q.courseId))]
       const newCourseMap = new Map<number, string>()
-      
-      console.log('Fetching courses for IDs:', uniqueCourseIds)
       
       await Promise.all(
         uniqueCourseIds.map(async (courseId) => {
           try {
             const course = await getCourseById(courseId)
-            console.log(`Course ${courseId}:`, course)
             newCourseMap.set(courseId, course.title)
           } catch (error) {
             console.error(`Failed to fetch course ${courseId}:`, error)
@@ -110,38 +96,31 @@ function AssignmentsPageContent() {
         })
       )
       
-      console.log('Course map:', newCourseMap)
       setCourseMap(newCourseMap)
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch assignments')
-      console.error('Error fetching assignments:', err)
+    } catch (err) {
+      const error = err as Error
+      setError(error.message || 'Failed to fetch quizzes')
+      console.error('Error fetching quizzes:', err)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this assignment?')) {
+    if (confirm('Are you sure you want to delete this quiz?')) {
       try {
-        await deleteAssignment(id)
-        fetchAssignments()
-      } catch (err: any) {
-        alert(err.message || 'Failed to delete assignment')
+        await deleteQuiz(id)
+        fetchQuizzes()
+      } catch (err) {
+        const error = err as Error
+        alert(error.message || 'Failed to delete quiz')
       }
     }
   }
 
-  const handleEdit = (assignment: Assignment) => {
-    setEditingAssignment(assignment)
+  const handleEdit = (quiz: Quiz) => {
+    setEditingQuiz(quiz)
     setEditOpen(true)
-  }
-
-  const handleViewSubmissions = (assignment: Assignment) => {
-    setViewingAssignment({
-      id: assignment.id,
-      title: assignment.title,
-    })
-    setSubmissionOpen(true)
   }
 
   const formatDate = (dateString: string) => {
@@ -166,9 +145,9 @@ function AssignmentsPageContent() {
           <div className="container mx-auto max-w-full px-4 py-8 md:px-6 lg:px-8">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold">Assignment Management</h1>
+                <h1 className="text-3xl font-bold">Quiz Management</h1>
                 <p className="mt-1 text-muted-foreground">
-                  Manage all assignments and track submissions
+                  Manage all quizzes and track questions
                 </p>
               </div>
               <Button
@@ -176,7 +155,7 @@ function AssignmentsPageContent() {
                 onClick={() => setCreateOpen(true)}
               >
                 {/* <Plus className="mr-2 h-4 w-4" /> */}
-                Add Assignment
+                Add Quiz
               </Button>
             </div>
 
@@ -190,11 +169,11 @@ function AssignmentsPageContent() {
               <CardHeader className="border-b bg-muted/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <CardTitle>All Assignments</CardTitle>
+                    <FileQuestion className="h-5 w-5 text-primary" />
+                    <CardTitle>All Quizzes</CardTitle>
                   </div>
                   <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-                    {filteredAssignments.length} Total
+                    {filteredQuizzes.length} Total
                   </div>
                 </div>
               </CardHeader>
@@ -202,15 +181,15 @@ function AssignmentsPageContent() {
                 {isLoading ? (
                   <div className="py-12 text-center text-muted-foreground">
                     <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                    <p className="mt-4">Loading assignments...</p>
+                    <p className="mt-4">Loading quizzes...</p>
                   </div>
-                ) : filteredAssignments.length === 0 ? (
+                ) : filteredQuizzes.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground">
-                    <FileText className="mx-auto h-12 w-12 opacity-20" />
+                    <FileQuestion className="mx-auto h-12 w-12 opacity-20" />
                     <p className="mt-4">
                       {searchQuery
-                        ? 'No assignments found matching your search.'
-                        : 'No assignments found. Create your first assignment!'}
+                        ? 'No quizzes found matching your search.'
+                        : 'No quizzes found. Create your first quiz!'}
                     </p>
                   </div>
                 ) : (
@@ -222,16 +201,16 @@ function AssignmentsPageContent() {
                             ID
                           </th>
                           <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
-                            Assignment Title
+                            Quiz Title
                           </th>
                           <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                             Course Name
                           </th>
                           <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
-                            Created Date
+                            Questions
                           </th>
                           <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
-                            Submissions
+                            Created Date
                           </th>
                           <th className="px-6 py-4 text-sm font-semibold text-muted-foreground">
                             Actions
@@ -239,65 +218,52 @@ function AssignmentsPageContent() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredAssignments.map((assignment) => (
+                        {filteredQuizzes.map((quiz) => (
                           <tr
-                            key={assignment.id}
+                            key={quiz.id}
                             className="border-b transition-colors hover:bg-muted/50 last:border-0"
                           >
                             <td className="px-6 py-4 text-sm font-medium">
-                              {assignment.id}
+                              {quiz.id}
                             </td>
                             <td className="px-6 py-4">
-                              <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <FileQuestion className="h-4 w-4 text-primary" />
                                 <span className="font-semibold text-foreground">
-                                  {assignment.title}
+                                  {quiz.title}
                                 </span>
-                                {assignment.description && (
-                                  <span className="mt-1 text-xs text-muted-foreground line-clamp-1">
-                                    {assignment.description}
-                                  </span>
-                                )}
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <BookOpen className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm font-medium">
-                                  {courseMap.get(assignment.courseId) || `Course ${assignment.courseId}`}
+                                  {courseMap.get(quiz.courseId) || `Course ${quiz.courseId}`}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <Hash className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                  {quiz.totalQuestions} questions
                                 </span>
                               </div>
                             </td>
                             <td className="px-6 py-4 text-sm">
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Calendar className="h-4 w-4" />
-                                <span>{formatDate(assignment.createdAt)}</span>
+                                <span>{formatDate(quiz.createdAt)}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium">
-                                  {assignment.submissionCount}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
-                                  onClick={() => handleViewSubmissions(assignment)}
-                                  title="View submissions"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-9 w-9 hover:bg-primary/10 hover:text-primary"
-                                  onClick={() => handleEdit(assignment)}
-                                  title="Edit assignment"
+                                  onClick={() => handleEdit(quiz)}
+                                  title="Edit quiz"
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
@@ -305,8 +271,8 @@ function AssignmentsPageContent() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                  onClick={() => handleDelete(assignment.id)}
-                                  title="Delete assignment"
+                                  onClick={() => handleDelete(quiz.id)}
+                                  title="Delete quiz"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -322,12 +288,12 @@ function AssignmentsPageContent() {
             </Card>
 
             {/* Pagination */}
-            {!isLoading && filteredAssignments.length > 0 && (
+            {!isLoading && filteredQuizzes.length > 0 && (
               <div className="mt-6 flex items-center justify-between rounded-lg border bg-card p-4">
                 <div className="text-sm text-muted-foreground">
                   Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> to{' '}
                   <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, totalCount)}</span> of{' '}
-                  <span className="font-medium text-foreground">{totalCount}</span> assignments
+                  <span className="font-medium text-foreground">{totalCount}</span> quizzes
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -382,34 +348,27 @@ function AssignmentsPageContent() {
         </main>
       </div>
 
-      <AssignmentCreateDialog
+      <QuizCreateDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onSuccess={fetchAssignments}
+        onSuccess={fetchQuizzes}
       />
 
-      <AssignmentEditDialog
-        assignment={editingAssignment}
+      <QuizEditDialog
+        quiz={editingQuiz}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSuccess={fetchAssignments}
-      />
-
-      <AssignmentSubmissionDialog
-        assignmentId={viewingAssignment?.id || null}
-        assignmentTitle={viewingAssignment?.title || ''}
-        open={submissionOpen}
-        onOpenChange={setSubmissionOpen}
+        onSuccess={fetchQuizzes}
       />
     </div>
   )
 }
 
 // Wrap with SearchProvider
-export default function AssignmentsPage() {
+export default function QuizzesPage() {
   return (
     <SearchProvider>
-      <AssignmentsPageContent />
+      <QuizzesPageContent />
     </SearchProvider>
   )
 }

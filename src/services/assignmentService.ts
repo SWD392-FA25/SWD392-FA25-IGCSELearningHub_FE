@@ -11,6 +11,33 @@ export interface Assignment {
   description?: string
 }
 
+// Submission type based on API response
+export interface Submission {
+  submissionId: number
+  assignmentId?: number
+  accountId: number
+  accountUserName: string
+  score: number | null
+  submittedDate: string
+}
+
+// Paginated Submission Response
+interface SubmissionResponse {
+  pageNumber: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasNext: boolean
+  hasPrevious: boolean
+  succeeded: boolean
+  status: string
+  statusCode: number
+  message: string
+  data: Submission[]
+  details: null
+  errors: null
+}
+
 // Paginated Assignment Response
 interface AssignmentResponse {
   pageNumber: number
@@ -113,6 +140,51 @@ export const deleteAssignment = async (id: number): Promise<boolean> => {
 
   if (!response.succeeded) {
     throw new Error(response.message || 'Failed to delete assignment')
+  }
+
+  return response.data
+}
+
+// Get submissions for an assignment
+export const getSubmissionsByAssignment = async (
+  assignmentId: number,
+  pageNumber: number = 1,
+  pageSize: number = 10
+): Promise<SubmissionResponse> => {
+  return fetchWithAuth<SubmissionResponse>(
+    `/admin/assignments/${assignmentId}/submissions?pageNumber=${pageNumber}&pageSize=${pageSize}`
+  )
+}
+
+// Get single submission by ID
+export const getSubmissionById = async (
+  submissionId: number
+): Promise<Submission> => {
+  return fetchWithAuth<Submission>(
+    `/admin/submissions/${submissionId}`
+  )
+}
+
+// Grade a submission
+export const gradeSubmission = async (
+  submissionId: number,
+  score: number
+): Promise<boolean> => {
+  const response = await fetchWithAuth<{
+    succeeded: boolean
+    status: string
+    statusCode: number
+    message: string
+    data: boolean
+    details: null
+    errors: null
+  }>(`/admin/submissions/${submissionId}/grade`, {
+    method: 'PATCH',
+    body: JSON.stringify({ score }),
+  })
+
+  if (!response.succeeded) {
+    throw new Error(response.message || 'Failed to grade submission')
   }
 
   return response.data
