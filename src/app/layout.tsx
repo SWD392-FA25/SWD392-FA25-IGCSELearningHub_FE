@@ -14,7 +14,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'IGCSE-Learning Hub',
   description: 'Learn IGCSE courses with our comprehensive online platform',
-  generator: 'v0.app',
+  generator: 'IGCSE-Learning Hub',
 }
 
 export default function RootLayout({

@@ -49,6 +49,17 @@ export const getEnrollmentsByCourse = async (
   )
 }
 
+// Get enrollments by account ID (for teachers to see their enrolled courses)
+export const getEnrollmentsByAccount = async (
+  accountId: number,
+  pageNumber: number = 1,
+  pageSize: number = 20
+): Promise<EnrollmentResponse> => {
+  return fetchWithAuth<EnrollmentResponse>(
+    `/admin/enrollments?accountId=${accountId}&pageNumber=${pageNumber}&pageSize=${pageSize}`
+  )
+}
+
 // Create enrollment
 export const createEnrollment = async (data: {
   accountId: number

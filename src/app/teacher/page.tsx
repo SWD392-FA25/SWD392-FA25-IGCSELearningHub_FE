@@ -1,24 +1,30 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
+import { TeacherHeader } from "@/components/layout/teacher-header"
+import { TeacherFooter } from "@/components/layout/teacher-footer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/input"
 import { LivestreamDetailDialog } from "@/components/teacher/livestream-detail-dialog"
 import { useAuth } from "@/hooks/useAuth"
 import { Livestream, getLivestreamsByTeacherId } from "@/services/livestreamService"
 import { getCourseById } from "@/services/courseService"
-import { Calendar, Users, DollarSign, Video, Eye } from "lucide-react"
+import { Calendar, Users, DollarSign, Video, Eye, Search, Filter } from "lucide-react"
 
 export default function TeacherDashboard() {
   const { user } = useAuth()
   const [livestreams, setLivestreams] = useState<Livestream[]>([])
+  const [filteredLivestreams, setFilteredLivestreams] = useState<Livestream[]>([])
   const [courseMap, setCourseMap] = useState<Map<number, string>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedLivestream, setSelectedLivestream] = useState<Livestream | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed'>('all')
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -32,6 +38,36 @@ export default function TeacherDashboard() {
     }
   }, [user, currentPage])
 
+  // Filter livestreams based on search and status
+  useEffect(() => {
+    let filtered = [...livestreams]
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(ls => 
+        ls.title.toLowerCase().includes(query) ||
+        courseMap.get(ls.courseId)?.toLowerCase().includes(query) ||
+        ls.id.toString().includes(query)
+      )
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      const now = new Date()
+      filtered = filtered.filter(ls => {
+        const scheduleDate = new Date(ls.schedule)
+        if (statusFilter === 'upcoming') {
+          return scheduleDate > now
+        } else {
+          return scheduleDate <= now
+        }
+      })
+    }
+
+    setFilteredLivestreams(filtered)
+  }, [livestreams, searchQuery, statusFilter, courseMap])
+
   const fetchLivestreams = async () => {
     if (!user?.id) return
 
@@ -44,6 +80,7 @@ export default function TeacherDashboard() {
       const teacherLivestreams = response.data.filter(ls => ls.teacherId === user.id)
       
       setLivestreams(teacherLivestreams)
+      setFilteredLivestreams(teacherLivestreams)
       // Update pagination based on filtered results
       const filteredTotalCount = teacherLivestreams.length
       const filteredTotalPages = Math.ceil(filteredTotalCount / pageSize)
@@ -99,7 +136,7 @@ export default function TeacherDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+      <TeacherHeader />
       
       <LivestreamDetailDialog
         open={detailOpen}
@@ -115,6 +152,33 @@ export default function TeacherDashboard() {
           </p>
         </div>
 
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by title, course, or ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'upcoming' | 'completed')}
+              className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="all">All Status</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
         {error && (
           <div className="mb-6 rounded-lg bg-destructive/10 p-4 text-destructive border border-destructive/20">
             {error}
@@ -126,22 +190,24 @@ export default function TeacherDashboard() {
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             <p className="mt-4 text-muted-foreground">Loading your livestreams...</p>
           </div>
-        ) : livestreams.length === 0 ? (
+        ) : filteredLivestreams.length === 0 ? (
           <Card className="border-2 border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Video className="h-16 w-16 text-muted-foreground/50 mb-4" />
               <h3 className="text-xl font-semibold text-foreground mb-2">
-                No Livestreams Yet
+                {searchQuery || statusFilter !== 'all' ? 'No Results Found' : 'No Livestreams Yet'}
               </h3>
               <p className="text-muted-foreground text-center max-w-md">
-                You don't have any scheduled livestream sessions at the moment.
+                {searchQuery || statusFilter !== 'all' 
+                  ? 'Try adjusting your search or filter criteria.' 
+                  : "You don't have any scheduled livestream sessions at the moment."}
               </p>
             </CardContent>
           </Card>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {livestreams.map((livestream) => (
+              {filteredLivestreams.map((livestream) => (
                 <Card
                   key={livestream.id}
                   className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border-border hover:border-primary/50 bg-gradient-to-br from-primary/5 via-background to-background"
@@ -290,7 +356,7 @@ export default function TeacherDashboard() {
           </>
         )}
       </main>
-      <Footer />
+      <TeacherFooter />
     </div>
   )
 }
