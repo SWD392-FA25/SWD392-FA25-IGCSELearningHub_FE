@@ -32,7 +32,7 @@ function toAuthResponse(res: BackendAuthResponse): AuthResponse {
  */
 export async function login(req: LoginRequest): Promise<AuthResponse> {
   const response = await http.post<BackendAuthResponse>(
-    '/api/v1/Authentication/login',
+    '/Authentication/login',
     req
   )
   return toAuthResponse(response)
@@ -45,7 +45,7 @@ export async function googleLogin(
   googleIdToken: string
 ): Promise<AuthResponse> {
   const response = await http.post<BackendAuthResponse>(
-    '/api/v1/Authentication/google-login',
+    '/Authentication/google-login',
     { idToken: googleIdToken },
     {
       headers: {
@@ -64,7 +64,7 @@ export async function refreshToken(
   refreshToken: string
 ): Promise<AuthResponse> {
   const response = await http.post<BackendAuthResponse>(
-    '/api/v1/Authentication/refresh',
+    '/Authentication/refresh',
     { refreshToken }
   )
   return toAuthResponse(response)

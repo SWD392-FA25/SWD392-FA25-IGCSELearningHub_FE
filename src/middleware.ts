@@ -15,6 +15,7 @@ const protectedRoutes = [
   '/pages/teacher',
   '/pages/student',
   '/pages/parent',
+  '/teacher',
   '/courses',
 ]
 
@@ -81,7 +82,7 @@ export function middleware(request: NextRequest) {
 
     // Teacher routes
     if (
-      pathname.startsWith('/pages/teacher') &&
+      (pathname.startsWith('/pages/teacher') || pathname.startsWith('/teacher')) &&
       userRole !== 'teacher' &&
       userRole !== 'admin'
     ) {

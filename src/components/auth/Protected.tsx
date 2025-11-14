@@ -23,8 +23,17 @@ export function Protected({ children, roles, fallback }: ProtectedProps) {
   useEffect(() => {
     if (!initialized) return
 
+    console.log('🔐 Protected Route Check:', { 
+      initialized, 
+      isAuthenticated, 
+      userRole: user?.role,
+      requiredRoles: roles,
+      pathname 
+    })
+
     // Not authenticated - redirect to login with return URL
     if (!isAuthenticated) {
+      console.log('❌ Not authenticated, redirecting to login')
       const returnUrl = encodeURIComponent(pathname)
       router.push(`/login?redirect=${returnUrl}`)
       return
@@ -32,8 +41,10 @@ export function Protected({ children, roles, fallback }: ProtectedProps) {
 
     // Check role if specified
     if (roles && roles.length > 0 && user) {
-      const hasRole = roles.includes(user.role)
+      const hasRole = roles.some(role => role.toLowerCase() === user.role.toLowerCase())
+      console.log('👤 Role check:', { userRole: user.role, requiredRoles: roles, hasRole })
       if (!hasRole) {
+        console.log('❌ Access denied, redirecting to home')
         // Unauthorized - redirect to home or show error
         router.push('/')
       }
@@ -61,7 +72,7 @@ export function Protected({ children, roles, fallback }: ProtectedProps) {
 
   // Check role
   if (roles && roles.length > 0 && user) {
-    const hasRole = roles.includes(user.role)
+    const hasRole = roles.some(role => role.toLowerCase() === user.role.toLowerCase())
     if (!hasRole) {
       return (
         <div className="flex h-screen items-center justify-center">
