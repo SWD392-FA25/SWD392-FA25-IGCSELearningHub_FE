@@ -29,6 +29,33 @@ export const login = async (
   return data
 }
 
+// Google login with Firebase ID token
+export const googleLogin = async (
+  firebaseIdToken: string
+): Promise<LoginResponse> => {
+  const response = await fetch(`${API_BASE_URL}/Authentication/google-login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: '*/*',
+    },
+    body: JSON.stringify({ firebaseIdToken }),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null)
+    throw new Error(errorData?.message || 'Google login failed')
+  }
+
+  const data: LoginResponse = await response.json()
+
+  if (!data.succeeded) {
+    throw new Error(data.message || 'Google login failed')
+  }
+
+  return data
+}
+
 // Store tokens and user info in localStorage
 export const storeAuthData = (loginResponse: LoginResponse) => {
   if (typeof window === 'undefined') return

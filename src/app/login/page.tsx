@@ -3,8 +3,10 @@
 import {
   getRedirectUrlByRole,
   login,
+  googleLogin,
   storeAuthData,
 } from '@/services/authService'
+import { signInWithGoogle } from '@/lib/auth/firebase'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useEffect, useState } from 'react'
@@ -55,19 +57,28 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // Simulate Google OAuth flow
-      // In production, you would integrate with a real OAuth provider like Supabase Auth
-      console.log('Initiating Google OAuth login...')
+      // Sign in with Google using Firebase
+      const firebaseIdToken = await signInWithGoogle()
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Send Firebase ID token to backend
+      const response = await googleLogin(firebaseIdToken)
 
-      // Redirect to dashboard or home after successful login
-      window.location.href = '/dashboard'
-    } catch (error) {
-      // Log the error for debugging and show a friendly message
-      console.error(error)
-      setError('Failed to login with Google. Please try again.')
+      // Store tokens and user data in localStorage
+      storeAuthData(response)
+
+      // Redirect based on user role
+      const userRole = response.data.role as
+        | 'Admin'
+        | 'Teacher'
+        | 'Student'
+        | 'Parent'
+      const redirectUrl = getRedirectUrlByRole(userRole)
+
+      // Use window.location for reliable redirect after auth
+      window.location.href = redirectUrl
+    } catch (error: any) {
+      console.error('Google login error:', error)
+      setError(error.message || 'Failed to login with Google. Please try again.')
       setIsLoading(false)
     }
   }
