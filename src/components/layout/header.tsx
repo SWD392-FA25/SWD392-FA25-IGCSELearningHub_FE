@@ -2,14 +2,35 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+<<<<<<< HEAD
 import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
+=======
+import { useState, useEffect } from "react"
+import { getStoredUser, clearAuthData } from "@/services/authService"
+>>>>>>> master
 
 export function Header() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+<<<<<<< HEAD
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
+=======
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    // Check authentication status on mount
+    const userData = getStoredUser()
+    setUser(userData)
+  }, [])
+
+  const handleLogout = () => {
+    clearAuthData()
+    setUser(null)
+    window.location.href = '/login'
+  }
+>>>>>>> master
 
   const isActive = (path: string) => pathname === path
 
@@ -56,16 +77,17 @@ export function Header() {
             >
               About
             </Link>
-            <Link
+            {/* <Link
               href="/teacher"
               className={`text-sm font-medium transition-colors ${
                 isActive("/teacher") ? "text-primary" : "text-foreground hover:text-primary"
               }`}
             >
               Teacher
-            </Link>
+            </Link> */}
           </nav>
 
+<<<<<<< HEAD
           {/* Desktop Login/Register Buttons or User Menu */}
           {isAuthenticated ? (
             <div className="hidden md:flex items-center relative">
@@ -190,6 +212,28 @@ export function Header() {
                 Register
               </Link>
             </div>
+=======
+          {/* Desktop Login/User Button */}
+          {user ? (
+            <div className="hidden md:flex items-center gap-3">
+              <span className="text-sm font-medium text-foreground">
+                {user.fullName || user.userName}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="hidden md:inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+            >
+              Login
+            </Link>
+>>>>>>> master
           )}
 
           {/* Mobile Menu Button */}
@@ -243,6 +287,7 @@ export function Header() {
               >
                 Teacher
               </Link>
+<<<<<<< HEAD
               
               {/* Mobile User Menu or Login/Register */}
               {isAuthenticated ? (
@@ -332,10 +377,25 @@ export function Header() {
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
+=======
+              {user ? (
+                <>
+                  <div className="px-4 py-2 text-sm font-medium text-foreground border-t border-border">
+                    {user.fullName || user.userName}
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setIsMobileMenuOpen(false)
+                    }}
+                    className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+                  >
+>>>>>>> master
                     Logout
                   </button>
                 </>
               ) : (
+<<<<<<< HEAD
                 <div className="flex gap-2">
                   <Link
                     href="/login"
@@ -352,6 +412,15 @@ export function Header() {
                     Register
                   </Link>
                 </div>
+=======
+                <Link
+                  href="/login"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+>>>>>>> master
               )}
             </nav>
           </div>
