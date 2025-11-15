@@ -1,20 +1,17 @@
-import { Analytics } from '@vercel/analytics/next'
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import type React from 'react'
-import { Providers } from '@/components/providers/Providers'
-import './globals.css'
+import type React from "react"
+import type { Metadata } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import { Toaster } from "react-hot-toast"
+import "./globals.css"
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
+const geist = Geist({ subsets: ["latin"] })
+const geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: 'IGCSE-Learning Hub',
-  description: 'Learn IGCSE courses with our comprehensive online platform',
-  generator: 'IGCSE-Learning Hub',
+  title: "IGCSE-Learning Hub",
+  description: "Learn IGCSE courses with our comprehensive online platform",
+  generator: "Theme by IGCSE-Learning Hub",
 }
 
 export default function RootLayout({
@@ -23,14 +20,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} font-sans antialiased`}
-        suppressHydrationWarning
-      >
-        <Providers>
-          {children}
-        </Providers>
+    <html lang="en">
+      <body className={`font-sans antialiased`}>
+        {children}
+        <Toaster position="top-right" />
         <Analytics />
       </body>
     </html>

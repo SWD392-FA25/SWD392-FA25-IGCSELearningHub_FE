@@ -34,19 +34,22 @@ export function TeacherEditDialog({ teacher, open, onOpenChange }: TeacherEditDi
         <div className="space-y-6">
           {/* Teacher Profile */}
           <div className="flex items-start gap-4 rounded-lg border border-border p-4">
-            {/* <Avatar className="h-20 w-20">
+            <Avatar className="h-20 w-20">
               <AvatarImage src={`/.jpg?height=80&width=80&query=${teacher.name}`} />
               <AvatarFallback className="text-2xl">{teacher.name.charAt(0)}</AvatarFallback>
-            </Avatar> */}
+            </Avatar>
             <div className="flex-1">
               <h3 className="text-xl font-semibold">{teacher.name}</h3>
               <p className="text-sm text-muted-foreground">Teacher ID: {teacher.id}</p>
-              <div className="mt-2 flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className={`mt-2 ${teacher.status === "Online" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}
+              >
                 <span
-                  className={`inline-block h-2 w-2 rounded-full ${teacher.status === "Online" ? "bg-green-600" : "bg-gray-600"}`}
+                  className={`mr-1.5 inline-block h-2 w-2 rounded-full ${teacher.status === "Online" ? "bg-green-600" : "bg-gray-600"}`}
                 />
-                <span className="text-sm font-medium">{teacher.status}</span>
-              </div>
+                {teacher.status}
+              </Badge>
             </div>
           </div>
 
@@ -86,7 +89,7 @@ export function TeacherEditDialog({ teacher, open, onOpenChange }: TeacherEditDi
             <div className="rounded-lg border border-border p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
-                <h4 className="font-semibold">Meeting Schedule</h4>
+                <h4 className="font-semibold">Class Schedule</h4>
               </div>
               <div className="space-y-3">
                 {teacher.classes.map((classItem, index) => (
