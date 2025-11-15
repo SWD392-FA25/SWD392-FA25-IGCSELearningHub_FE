@@ -3,7 +3,7 @@ import * as React from "react"
 export function Dialog({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={() => onOpenChange(false)} />
       <div className="relative z-10 w-[95vw] max-w-lg rounded-lg border bg-card text-card-foreground shadow-lg">
         {children}
@@ -24,7 +24,4 @@ export function DialogTitle({ className, children }: { className?: string; child
   return <h2 className={"text-xl font-semibold " + (className ?? "")}>{children}</h2>
 }
 
-export function DialogDescription({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <p className={"text-sm text-muted-foreground " + (className ?? "")}>{children}</p>
-}
 

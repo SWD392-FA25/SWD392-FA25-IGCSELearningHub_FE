@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/Button"
 import { useAuth } from "@/hooks/useAuth"
 import { authService } from "@/services/auth-service"
-import { auth } from "@/lib/firebase"
 
 interface LoginResponse {
   succeeded: boolean
@@ -34,7 +33,7 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const { signIn, signInWithGoogle } = useAuth()
+  const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,33 +41,31 @@ export default function LoginPage() {
     setError("")
 
     try {
-      // Get user role first to determine redirect
       const data = await authService.login({ username, password })
 
       if (data.succeeded && data.data) {
-        // Determine redirect path based on role
-        let redirectPath = '/'
+        login(data.data, data.data.accessToken)
+        toast.success("Login successful!")
+
         switch (data.data.role.toLowerCase()) {
           case 'admin':
-            redirectPath = '/pages/admin/dashboard'
+            window.location.href = '/admin'
             break
           case 'teacher':
-            redirectPath = '/teacher'
+            window.location.href = '/teacher'
             break
           case 'student':
-            redirectPath = '/'
+            window.location.href = '/student'
+            break
+          default:
+            window.location.href = '/'
             break
         }
-
-        // Use signIn from useAuth hook with proper parameters
-        await signIn({ emailOrUsername: username, password }, redirectPath)
-        toast.success("Login successful!")
       } else {
         setError(data.message || "Login failed. Please check your credentials.")
       }
     } catch (err) {
-      console.error('Login error:', err)
-      setError(err instanceof Error ? err.message : "Failed to login. Please try again.")
+      setError("Failed to login. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -82,34 +79,29 @@ export default function LoginPage() {
       const data = await authService.loginWithGoogle()
 
       if (data.succeeded && data.data) {
-        // Determine redirect path based on role
-        let redirectPath = '/'
+        login(data.data, data.data.accessToken)
+        toast.success("Google login successful!")
+
         switch (data.data.role.toLowerCase()) {
           case 'admin':
-            redirectPath = '/pages/admin/dashboard'
+            window.location.href = '/admin'
             break
           case 'teacher':
-            redirectPath = '/teacher'
+            window.location.href = '/teacher'
             break
           case 'student':
-            redirectPath = '/'
+            window.location.href = '/student'
             break
-        }
-
-        // Get the Google ID token and use signInWithGoogle from useAuth hook
-        const firebaseUser = auth.currentUser
-        if (firebaseUser) {
-          const googleIdToken = await firebaseUser.getIdToken()
-          await signInWithGoogle(googleIdToken, redirectPath)
-          toast.success("Google login successful!")
+          default:
+            window.location.href = '/'
+            break
         }
       } else {
         setError(data.message || "Google login failed.")
         toast.error(data.message || "Google login failed")
       }
     } catch (err) {
-      console.error('Google login error:', err)
-      setError(err instanceof Error ? err.message : "Failed to login with Google. Please try again.")
+      setError("Failed to login with Google. Please try again.")
       toast.error("Failed to login with Google")
     } finally {
       setIsLoading(false)

@@ -1,11 +1,9 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/input'
-import { useSearch } from '@/context/SearchContext'
-import { SignOutButton } from '@/components/auth/SignOutButton'
-import { Bell, Menu, Search } from 'lucide-react'
+import { Bell, Menu, Search } from "lucide-react"
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface DashboardHeaderProps {
   onMenuClick: () => void
@@ -34,24 +32,17 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-1 ml-auto">
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
             <span className="sr-only">Notifications</span>
           </Button>
 
-          <div className="flex items-center">
-            <SignOutButton variant="ghost" size="default" showIcon={true} />
-          </div>
-
-          {/* <Avatar className="h-9 w-9">
-            <AvatarImage
-              src="/56d65f27ec9f2c3fa6dc13e1d59f9a26.jpg"
-              alt="User"
-            />
+          <Avatar className="h-9 w-9">
+            <AvatarImage src="/56d65f27ec9f2c3fa6dc13e1d59f9a26.jpg" alt="User" />
             <AvatarFallback>AD</AvatarFallback>
-          </Avatar> */}
+          </Avatar>
         </div>
       </div>
     </header>

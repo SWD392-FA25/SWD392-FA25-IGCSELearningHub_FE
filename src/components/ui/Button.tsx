@@ -15,7 +15,7 @@ export const Button = ({ children, variant = "default", size = "default", classN
       ? "border bg-transparent hover:bg-muted"
       : variant === "primary"
       ? "bg-primary text-primary-foreground hover:opacity-90"
-      : "";
+      : "bg-black text-white";
 
   const sizeClass =
     size === "icon"
