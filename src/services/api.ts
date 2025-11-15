@@ -1,5 +1,6 @@
 // API utility with authentication support
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+  'https://igcse-learninghub-api-ajbhg7anb8cfcaa2.southeastasia-01.azurewebsites.net/api/v1'
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | boolean>
@@ -28,8 +29,10 @@ export async function fetchWithAuth<T>(
     }
   }
 
-  // Get token from storage
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  // Get token from storage (check both 'token' and 'jwtToken')
+  const token = typeof window !== 'undefined' 
+    ? localStorage.getItem('jwtToken') || localStorage.getItem('token')
+    : null
 
   // Prepare headers
   const headers: Record<string, string> = {
@@ -52,6 +55,9 @@ export async function fetchWithAuth<T>(
     if (response.status === 401) {
       // Clear auth data and redirect to login
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('jwtToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('userData')
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         window.location.href = '/login'

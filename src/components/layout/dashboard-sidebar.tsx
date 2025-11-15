@@ -79,11 +79,11 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
 
         <nav className={cn("flex flex-col gap-2 p-4", !isOpen && "items-center px-2")}>
           <Link
-            href="/pages/admin"
+            href="/pages/admin/dashboard"
             className={cn(
               "flex items-center gap-3 rounded-lg py-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors overflow-hidden",
               isOpen ? "px-3" : "px-2 justify-center",
-              pathname === "/pages/admin" && "bg-sidebar-accent text-primary font-semibold"
+              pathname === "/pages/admin/dashboard" && "bg-sidebar-accent text-primary font-semibold"
             )}
             title={!isOpen ? "Dashboard" : undefined}
           >
