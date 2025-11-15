@@ -129,7 +129,7 @@ export function QuizModal({ quiz, isOpen, onClose }: QuizModalProps) {
       footer={null}
       width={1000}
       style={{ top: 20 }}
-      destroyOnClose
+      destroyOnHidden
     >
       {loading && !quizData && (
         <div className="text-center py-12">
