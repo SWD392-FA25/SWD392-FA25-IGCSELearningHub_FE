@@ -29,10 +29,10 @@ export function StudentDetailDialog({ student, open, onOpenChange }: StudentDeta
 
         <div className="space-y-6">
           <div className="flex items-start gap-4">
-            <Avatar className="h-20 w-20">
+            {/* <Avatar className="h-20 w-20">
               <AvatarImage src={`/.jpg?height=80&width=80&query=${student.name}`} />
               <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+            </Avatar> */}
             <div className="flex-1">
               <h3 className="text-xl font-semibold">{student.name}</h3>
               <p className="text-sm text-muted-foreground">Student ID: {student.id}</p>

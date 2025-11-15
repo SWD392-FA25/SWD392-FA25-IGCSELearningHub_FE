@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Input } from "antd";
+import { Modal, Upload, Input } from "antd";
 import toast from "react-hot-toast";
+import { InboxOutlined } from "@ant-design/icons";
 import { Assignment } from "@/types/api-types";
 import { assignmentService } from "@/services/assignment-service";
+import { uploadFileToFirebase, generateFirebasePath } from "@/lib/firebase-upload";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/hooks/useAuth";
 
+const { Dragger } = Upload;
 const { TextArea } = Input;
 
 interface AssignmentSubmitModalProps {
@@ -22,28 +26,46 @@ export function AssignmentSubmitModal({
   onClose,
   onSuccess,
 }: AssignmentSubmitModalProps) {
+  const { user } = useAuth();
   const [textAnswer, setTextAnswer] = useState("");
-  const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleClose = () => {
     setTextAnswer("");
-    setAttachmentUrl("");
+    setFile(null);
     onClose();
+  };
+
+  const handleFileChange = (info: any) => {
+    const { file } = info;
+    if (file.status !== 'uploading') {
+      setFile(file);
+    }
   };
 
   const handleSubmit = async () => {
     if (!assignment) return;
 
-    if (!textAnswer.trim() && !attachmentUrl.trim()) {
-      toast.error("Please provide either a text answer or an attachment URL");
+    if (!textAnswer.trim() && !file) {
+      toast.error("Please provide either a text answer or upload a file");
       return;
     }
 
     setSubmitting(true);
     try {
+      let attachmentUrl = "";
+
+      if (file && user) {
+        setUploading(true);
+        const path = generateFirebasePath(user.id, assignment.assignmentId, file.name);
+        attachmentUrl = await uploadFileToFirebase(file, path);
+        setUploading(false);
+      }
+
       const response = await assignmentService.submitAssignment(assignment.assignmentId, {
-        attachmentUrl: attachmentUrl.trim(),
+        attachmentUrl,
         textAnswer: textAnswer.trim(),
       });
 
@@ -58,6 +80,7 @@ export function AssignmentSubmitModal({
       console.error("Error submitting assignment:", error);
       toast.error("Failed to submit assignment. Please try again.");
     } finally {
+      setUploading(false);
       setSubmitting(false);
     }
   };
@@ -68,11 +91,11 @@ export function AssignmentSubmitModal({
       open={isOpen}
       onCancel={handleClose}
       footer={[
-        <Button key="cancel" variant="outline" onClick={handleClose} disabled={submitting}>
+        <Button key="cancel" variant="outline" onClick={handleClose} disabled={submitting || uploading}>
           Cancel
         </Button>,
-        <Button key="submit" onClick={handleSubmit} disabled={submitting}>
-          {submitting ? "Submitting..." : "Submit Assignment"}
+        <Button key="submit" onClick={handleSubmit} disabled={submitting || uploading}>
+          {uploading ? "Uploading..." : submitting ? "Submitting..." : "Submit Assignment"}
         </Button>,
       ]}
       width={700}
@@ -93,25 +116,38 @@ export function AssignmentSubmitModal({
               onChange={(e) => setTextAnswer(e.target.value)}
               placeholder="Enter your answer here..."
               rows={6}
-              disabled={submitting}
+              disabled={submitting || uploading}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Attachment URL (Optional)
+              Upload File (Optional)
             </label>
-            <Input
-              value={attachmentUrl}
-              onChange={(e) => setAttachmentUrl(e.target.value)}
-              placeholder="https://example.com/your-file.pdf"
-              disabled={submitting}
-              type="url"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Enter a valid HTTPS URL to your uploaded file
-            </p>
+            <Dragger
+              name="file"
+              multiple={false}
+              onChange={handleFileChange}
+              beforeUpload={() => false}
+              disabled={submitting || uploading}
+              maxCount={1}
+            >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">Click or drag file to this area to upload</p>
+              <p className="ant-upload-hint">
+                Support for a single file upload. PDF, DOC, DOCX, or images.
+              </p>
+            </Dragger>
           </div>
+
+          {uploading && (
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Uploading file...</p>
+            </div>
+          )}
         </div>
       )}
     </Modal>
