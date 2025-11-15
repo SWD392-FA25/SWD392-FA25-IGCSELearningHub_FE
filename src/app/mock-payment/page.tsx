@@ -1,9 +1,9 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 
-export default function MockPaymentPage() {
+function MockPaymentContent() {
   const search = useSearchParams()
   const orderId = search.get('orderId')
   const [completed, setCompleted] = useState(false)
@@ -42,5 +42,13 @@ export default function MockPaymentPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function MockPaymentPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <MockPaymentContent />
+    </Suspense>
   )
 }
